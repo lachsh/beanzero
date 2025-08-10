@@ -1,0 +1,82 @@
+TopBar {
+    background: $primary;
+    height: 3;
+    layout: horizontal;
+}
+
+#calendar {
+    width: 1fr;
+    background: $error;
+}
+
+ToBeBudgeted {
+    width: auto;
+    layout: horizontal;
+    padding-left: 0;
+    border-left: outer $foreground;
+    background: $success;
+}
+
+#tbb-left {
+    width: 3;
+    content-align: center middle;
+    background: $success-muted;
+    color: $text;
+    text-style: bold;
+}
+
+#tbb {
+    width: auto;
+    min-width: 25;
+    text-align: right;
+    background: $success-muted;
+    padding: 0 1;
+    color: $text-success;
+}
+
+Calendar {
+    layout: grid;
+    grid-size: 6 3;
+    width: 24;
+    background: $primary;
+}
+
+#year {
+    column-span: 6;
+    text-align: center;
+    background: $accent;
+    color: $text;
+}
+
+.month {
+    width: 4;
+    background: $primary-lighten-3;
+    text-align: center;
+    color: $text;
+}
+.month.odd {
+    background: $primary-lighten-2;
+}
+.month.active {
+    background: $accent-lighten-1;
+}
+
+TbbSummary {
+    width: 1fr;
+    layout: grid;
+    grid-size: 2 3;
+    grid-columns: 1fr auto;
+    grid-gutter: 0 2;
+    padding: 0 2;
+}
+
+TbbSummary .key {
+    text-align: right;
+    color: $text-muted;
+    text-style: italic;
+}
+TbbSummary .value {
+    text-align: right;
+    color: $text;
+    text-style: bold;
+}

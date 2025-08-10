@@ -1,0 +1,18 @@
+[project]
+name = "beanzero"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [{ name = "Lachie H", email = "lh@lachs.au" }]
+requires-python = ">=3.10"
+dependencies = ["textual>=5.3.0"]
+
+[project.scripts]
+beanzero = "beanzero:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["textual-dev>=1.7.0"]
