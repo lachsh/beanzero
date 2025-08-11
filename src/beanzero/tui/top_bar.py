@@ -29,11 +29,11 @@ class TbbSummary(Widget):
 class ToBeBudgeted(Widget):
     def compose(self) -> ComposeResult:
         yield Static("T\nB\nB", id="tbb-left")
-        yield Digits("0.00", id="tbb")
+        yield Digits("-234.12", id="tbb")
 
 
 class TopBar(Widget):
     def compose(self) -> ComposeResult:
         yield Calendar()
         yield TbbSummary()
-        yield ToBeBudgeted()
+        yield ToBeBudgeted(classes="negative")

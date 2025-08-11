@@ -34,6 +34,17 @@ ToBeBudgeted {
     color: $text-success;
 }
 
+ToBeBudgeted.negative {
+    background: $error;
+}
+ToBeBudgeted.negative #tbb-left {
+    background: $error-muted;
+}
+ToBeBudgeted.negative #tbb {
+    color: $text-error;
+    background: $error-muted;
+}
+
 Calendar {
     layout: grid;
     grid-size: 6 3;
