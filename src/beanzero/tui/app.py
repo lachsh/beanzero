@@ -1,6 +1,7 @@
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Header
 
+from beanzero.tui.category import CategoryTable
 from beanzero.tui.top_bar import TopBar
 
 
@@ -12,4 +13,5 @@ class BeanZeroApp(App):
     def compose(self) -> ComposeResult:
         yield Header()
         yield TopBar()
+        yield CategoryTable()
         yield Footer()
