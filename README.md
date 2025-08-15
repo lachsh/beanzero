@@ -8,6 +8,7 @@
 - Budget accounts, categories, options, etc. are stored in a config file - UI editing of these things is out of scope
 - The actual money assigned to categories + any other budget-specific data is stored in a JSON data file, and these things _are_ intended to be edited primarily with the UI
 - Budgeting is a subset of overall financial tracking, and so the budget can be configured to operate over any subset of relevant beancount accounts
+- The underlying maths is predictable - there's no magic around "present" or "future" months, and a month's balances depend only on data from that and all previous months
 
 ## Budget structure
 
