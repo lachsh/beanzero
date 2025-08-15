@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import functools
+import json
 import operator
 import typing
 from collections import defaultdict
@@ -16,6 +17,7 @@ import beancount.loader
 import yaml
 from attrs import define, field
 from cattrs import Converter
+from cattrs.cols import defaultdict_structure_factory
 from slugify import slugify
 
 budget_converter = Converter()
@@ -136,10 +138,13 @@ class BudgetSpec:
     """Defines the accounts, categories, and other metadata for a budget.
 
     Does not contain any actual transaction or budget data itself, just the structure.
+
+    This is loaded from a config file, and is immutable while the program is running.
     """
 
     name: str
     ledger: Path = field()
+    storage: Path = field()
     currency: beandata.Currency
     start: Month
     accounts: AccountCollection
@@ -154,6 +159,10 @@ class BudgetSpec:
     @ledger.validator  # type: ignore
     def check_ledger(self, _, ledger):
         assert self.ledger.exists()
+
+    @storage.validator  # type: ignore
+    def check_storage(self, _, ledger):
+        assert self.storage.exists()
 
     @groups.validator  # type: ignore
     def check_groups(self, _, groups: list[CategoryGroup]):
@@ -224,7 +233,32 @@ class BudgetTransaction:
         return Month.from_datetime(self.date)
 
 
+@define
+class MonthlyBudgetAmounts:
+    held: amt.Amount
+    categories: defaultdict[CategoryKey, amt.Amount]
+
+
+@define
+class BudgetStorage:
+    """Defines the aspects of the budget that are editable in the running program.
+
+    This data is mutable, and loaded from and persisted to disk, in contrast to
+    the read-only BudgetSpec.
+    """
+
+    months: defaultdict[Month, MonthlyBudgetAmounts]
+
+
 class Budget:
+    """Combines all data sources to calculate budget data.
+
+    Loads the budget spec from the config file, the transaction data from the beancount
+    ledger, and the stored budget amounts from the data JSON file.
+
+    Iterates over months to calculate per-category and overall balances and totals.
+    """
+
     def convert_transaction(self, tx: beandata.Transaction) -> BudgetTransaction | None:
         # Scan through postings for overall budget flow
         flow = self.spec.zero
@@ -348,7 +382,31 @@ class Budget:
                     self.monthly_transactions[tx.month].append(tx)
         self.latest_month = max(self.monthly_transactions.keys()) + 1
 
-        # TODO load amounts budgeted each month
+        # Load amounts budgeted each month
+        with self.spec.storage.open("rb") as storage_f:
+            budgeting_data = json.load(storage_f)
+            budget_converter.register_structure_hook(
+                amt.Amount, lambda a, _: amt.Amount(Decimal(a), self.spec.zero.currency)
+            )
+            hook = defaultdict_structure_factory(
+                defaultdict[CategoryKey, amt.Amount],
+                budget_converter,
+                default_factory=lambda: self.spec.zero,
+            )
+            budget_converter.register_structure_hook(
+                defaultdict[CategoryKey, amt.Amount], hook
+            )
+            hook = defaultdict_structure_factory(
+                defaultdict[Month, MonthlyBudgetAmounts],
+                budget_converter,
+                default_factory=lambda: MonthlyBudgetAmounts(
+                    self.spec.zero, defaultdict(lambda: self.spec.zero)
+                ),
+            )
+            budget_converter.register_structure_hook(
+                defaultdict[Month, MonthlyBudgetAmounts], hook
+            )
+            self.budgeting = budget_converter.structure(budgeting_data, BudgetStorage)
 
         # Calculate monthly totals from transaction and budgeting data
         self.monthly_totals: dict[Month, Budget.MonthlyTotals] = dict()
@@ -358,12 +416,12 @@ class Budget:
             previous_tbb=self.spec.zero,
             previous_overspending=self.spec.zero,
             funding=self.aggregate_funding(self.monthly_transactions[self.spec.start]),
-            holding=self.spec.zero,
+            holding=self.budgeting.months[self.spec.start].held,
             carryover=defaultdict(lambda: self.spec.zero),
             spending=self.aggregate_spending(
                 self.monthly_transactions[self.spec.start]
             ),
-            budgeting=defaultdict(lambda: self.spec.zero),
+            budgeting=self.budgeting.months[self.spec.start].categories,
         )
 
         month = self.spec.start + 1
@@ -374,9 +432,9 @@ class Budget:
                 previous_tbb=prev.to_be_budgeted,
                 previous_overspending=prev.overspending,
                 funding=self.aggregate_funding(self.monthly_transactions[month]),
-                holding=self.spec.zero,
+                holding=self.budgeting.months[self.spec.start].held,
                 carryover=prev.carryover_balances,
                 spending=self.aggregate_spending(self.monthly_transactions[month]),
-                budgeting=defaultdict(lambda: self.spec.zero),
+                budgeting=self.budgeting.months[month].categories,
             )
             month += 1
