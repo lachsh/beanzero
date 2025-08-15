@@ -19,9 +19,9 @@ from beanzero.budget.spec import (
     BudgetSpec,
     CategoryKey,
     Month,
-    budget_converter,
+    spec_converter,
 )
-from beanzero.budget.store import AssignedAmounts, BudgetStore
+from beanzero.budget.store import AssignedAmounts, BudgetStore, get_store_converter
 
 
 @define(frozen=True)
@@ -192,31 +192,11 @@ class Budget:
         # Load amounts budgeted each month
         with self.spec.storage.open("rb") as storage_f:
             budgeting_data = json.load(storage_f)
-            budget_converter.register_structure_hook(
-                amt.Amount, lambda a, _: amt.Amount(Decimal(a), self.spec.zero.currency)
-            )
-            hook = defaultdict_structure_factory(
-                defaultdict[CategoryKey, amt.Amount],
-                budget_converter,
-                default_factory=lambda: self.spec.zero,
-            )
-            budget_converter.register_structure_hook(
-                defaultdict[CategoryKey, amt.Amount], hook
-            )
-            hook = defaultdict_structure_factory(
-                defaultdict[Month, AssignedAmounts],
-                budget_converter,
-                default_factory=lambda: AssignedAmounts(
-                    self.spec.zero, defaultdict(lambda: self.spec.zero)
-                ),
-            )
-            budget_converter.register_structure_hook(
-                defaultdict[Month, AssignedAmounts], hook
-            )
             # we want to keep the store private and expose methods on Budget to ensure
             # we can re-run validation and refresh all the MonthlyTotals and so on as
             # required
-            self._store = budget_converter.structure(budgeting_data, BudgetStore)
+            store_converter = get_store_converter(self.spec.zero)
+            self._store = store_converter.structure(budgeting_data, BudgetStore)
 
         # Calculate monthly totals from transaction and budgeting data
         self.monthly_totals: dict[Month, MonthlyTotals] = dict()

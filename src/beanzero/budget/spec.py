@@ -12,6 +12,8 @@ from attrs import define, field
 from cattrs import Converter
 from slugify import slugify
 
+spec_converter = Converter()
+
 
 @total_ordering
 @define(frozen=True)
@@ -74,6 +76,11 @@ class Month:
         return self.start_datetime().strftime("%B %Y")
 
 
+@spec_converter.register_structure_hook
+def parse_month(val: str, _) -> Month:
+    return Month.from_string(val)
+
+
 @define(frozen=True)
 class BeanAccountCollection:
     """Represents an aribtrary collection of Beancount accounts."""
@@ -83,6 +90,16 @@ class BeanAccountCollection:
     def __contains__(self, account: str):
         # TODO support globs
         return account in self.accounts
+
+
+@spec_converter.register_structure_hook
+def to_account_collection(val: str | list[str] | None, _) -> BeanAccountCollection:
+    if val is None:
+        return BeanAccountCollection([])
+    elif isinstance(val, str):
+        return BeanAccountCollection([val])
+    elif isinstance(val, list):
+        return BeanAccountCollection(val)
 
 
 CategoryKey = str
@@ -108,24 +125,6 @@ class CategoryGroup:
     categories: list[Category]
 
 
-budget_converter = Converter()
-
-
-@budget_converter.register_structure_hook
-def parse_month(val: str, _) -> Month:
-    return Month.from_string(val)
-
-
-@budget_converter.register_structure_hook
-def to_account_collection(val: str | list[str] | None, _) -> BeanAccountCollection:
-    if val is None:
-        return BeanAccountCollection([])
-    elif isinstance(val, str):
-        return BeanAccountCollection([val])
-    elif isinstance(val, list):
-        return BeanAccountCollection(val)
-
-
 @define(frozen=True)
 class BudgetSpec:
     """Defines the accounts, categories, and other metadata for a budget.
@@ -146,7 +145,7 @@ class BudgetSpec:
     @classmethod
     def load(cls, fp: typing.TextIO):
         data = yaml.safe_load(fp)
-        spec = budget_converter.structure(data, cls)
+        spec = spec_converter.structure(data, cls)
         return spec
 
     @ledger.validator  # type: ignore
