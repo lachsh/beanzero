@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import json
+import typing
 from collections import defaultdict
 from decimal import Decimal
 
@@ -28,6 +32,12 @@ class BudgetStore:
     """
 
     assigned: defaultdict[Month, AssignedAmounts]
+
+    @classmethod
+    def load(cls, fp: typing.IO, zero_val: amt.Amount) -> BudgetStore:
+        data = json.load(fp)
+        store = get_store_converter(zero_val).structure(data, cls)
+        return store
 
 
 # we need a function rather than a global instance as the hooks need the

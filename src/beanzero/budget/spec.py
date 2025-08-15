@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import typing
 from decimal import Decimal
 from functools import total_ordering
 from pathlib import Path
@@ -143,7 +144,7 @@ class BudgetSpec:
     groups: list[CategoryGroup] = field()
 
     @classmethod
-    def load(cls, fp: typing.TextIO):
+    def load(cls, fp: typing.IO):
         data = yaml.safe_load(fp)
         spec = spec_converter.structure(data, cls)
         return spec
