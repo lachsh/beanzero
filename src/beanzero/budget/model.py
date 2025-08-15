@@ -90,7 +90,7 @@ def parse_month(val: str, _) -> Month:
 
 
 @define(frozen=True)
-class AccountCollection:
+class BeanAccountCollection:
     """Represents an aribtrary collection of Beancount accounts."""
 
     accounts: list[beandata.Account] = field(factory=list)
@@ -101,13 +101,13 @@ class AccountCollection:
 
 
 @budget_converter.register_structure_hook
-def to_account_collection(val: str | list[str] | None, _) -> AccountCollection:
+def to_account_collection(val: str | list[str] | None, _) -> BeanAccountCollection:
     if val is None:
-        return AccountCollection([])
+        return BeanAccountCollection([])
     elif isinstance(val, str):
-        return AccountCollection([val])
+        return BeanAccountCollection([val])
     elif isinstance(val, list):
-        return AccountCollection(val)
+        return BeanAccountCollection(val)
 
 
 CategoryKey = str
@@ -118,7 +118,7 @@ class Category:
     """Represents a single budget ('spending') category."""
 
     name: str
-    accounts: AccountCollection = field(factory=AccountCollection)
+    accounts: BeanAccountCollection = field(factory=BeanAccountCollection)
     key: CategoryKey = field(init=False)
 
     def __attrs_post_init__(self):
@@ -147,7 +147,7 @@ class BudgetSpec:
     storage: Path = field()
     currency: beandata.Currency
     start: Month
-    accounts: AccountCollection
+    accounts: BeanAccountCollection
     groups: list[CategoryGroup] = field()
 
     @classmethod
@@ -233,21 +233,23 @@ class BudgetTransaction:
         return Month.from_datetime(self.date)
 
 
-@define
-class MonthlyBudgetAmounts:
-    held: amt.Amount
+class AssignedAmounts:
+    held: amt.Amount = field()
     categories: defaultdict[CategoryKey, amt.Amount]
 
+    @held.validator  # type: ignore
+    def validate_held(self, attr, held):
+        assert held.number >= 0, "Can't have negative held balance"
 
-@define
-class BudgetStorage:
+
+class BudgetStore:
     """Defines the aspects of the budget that are editable in the running program.
 
     This data is mutable, and loaded from and persisted to disk, in contrast to
     the read-only BudgetSpec.
     """
 
-    months: defaultdict[Month, MonthlyBudgetAmounts]
+    assigned: defaultdict[Month, AssignedAmounts]
 
 
 class Budget:
@@ -315,7 +317,8 @@ class Budget:
         spec: BudgetSpec
 
         # global amounts
-        previous_tbb: amt.Amount
+        previous_tba: amt.Amount
+        previous_holding: amt.Amount
         previous_overspending: amt.Amount
         funding: amt.Amount
         holding: amt.Amount
@@ -355,17 +358,18 @@ class Budget:
         def overspending(self) -> amt.Amount:
             balances = self.category_balances
             neg_balances = [a for a in balances.values() if a.number < 0]
-            overspending = functools.reduce(amt.add, neg_balances)
+            overspending = functools.reduce(amt.add, neg_balances, self.spec.zero)
             return overspending
 
         @property
-        def to_be_budgeted(self) -> amt.Amount:
-            tbb = self.previous_tbb
-            tbb = amt.add(tbb, self.previous_overspending)
-            tbb = amt.add(tbb, self.funding)
-            tbb = amt.sub(tbb, self.total_budgeting)
-            tbb = amt.sub(tbb, self.holding)
-            return tbb
+        def to_be_assigned(self) -> amt.Amount:
+            tba = self.previous_tba
+            tba = amt.add(tba, self.previous_holding)
+            tba = amt.add(tba, self.previous_overspending)
+            tba = amt.add(tba, self.funding)
+            tba = amt.sub(tba, self.total_budgeting)
+            tba = amt.sub(tba, self.holding)
+            return tba
 
     def __init__(self, spec: BudgetSpec):
         self.spec = spec
@@ -397,31 +401,32 @@ class Budget:
                 defaultdict[CategoryKey, amt.Amount], hook
             )
             hook = defaultdict_structure_factory(
-                defaultdict[Month, MonthlyBudgetAmounts],
+                defaultdict[Month, AssignedAmounts],
                 budget_converter,
-                default_factory=lambda: MonthlyBudgetAmounts(
+                default_factory=lambda: AssignedAmounts(
                     self.spec.zero, defaultdict(lambda: self.spec.zero)
                 ),
             )
             budget_converter.register_structure_hook(
-                defaultdict[Month, MonthlyBudgetAmounts], hook
+                defaultdict[Month, AssignedAmounts], hook
             )
-            self.budgeting = budget_converter.structure(budgeting_data, BudgetStorage)
+            self.store = budget_converter.structure(budgeting_data, BudgetStore)
 
         # Calculate monthly totals from transaction and budgeting data
         self.monthly_totals: dict[Month, Budget.MonthlyTotals] = dict()
 
         self.monthly_totals[self.spec.start] = Budget.MonthlyTotals(
             spec=self.spec,
-            previous_tbb=self.spec.zero,
+            previous_tba=self.spec.zero,
+            previous_holding=self.spec.zero,
             previous_overspending=self.spec.zero,
             funding=self.aggregate_funding(self.monthly_transactions[self.spec.start]),
-            holding=self.budgeting.months[self.spec.start].held,
+            holding=self.store.assigned[self.spec.start].held,
             carryover=defaultdict(lambda: self.spec.zero),
             spending=self.aggregate_spending(
                 self.monthly_transactions[self.spec.start]
             ),
-            budgeting=self.budgeting.months[self.spec.start].categories,
+            budgeting=self.store.assigned[self.spec.start].categories,
         )
 
         month = self.spec.start + 1
@@ -429,12 +434,13 @@ class Budget:
             prev = self.monthly_totals[month - 1]
             self.monthly_totals[month] = Budget.MonthlyTotals(
                 spec=self.spec,
-                previous_tbb=prev.to_be_budgeted,
+                previous_tba=prev.to_be_assigned,
+                previous_holding=prev.holding,
                 previous_overspending=prev.overspending,
                 funding=self.aggregate_funding(self.monthly_transactions[month]),
-                holding=self.budgeting.months[self.spec.start].held,
+                holding=self.store.assigned[month].held,
                 carryover=prev.carryover_balances,
                 spending=self.aggregate_spending(self.monthly_transactions[month]),
-                budgeting=self.budgeting.months[month].categories,
+                budgeting=self.store.assigned[month].categories,
             )
             month += 1

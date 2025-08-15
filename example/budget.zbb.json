@@ -1,7 +1,7 @@
 {
-    "months": {
+    "assigned": {
         "2025-01": {
-            "held": "0",
+            "held": "33",
             "categories": {
                 "investments": "200",
                 "rent": "800",
