@@ -1,6 +1,6 @@
 import IPython
 
-from beanzero.budget.model import *
+from beanzero.budget import *
 
 if __name__ == "__main__":
     with open("./budget.yml", "r") as f:
