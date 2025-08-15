@@ -1,0 +1,51 @@
+2025-01-01 open Assets:Checking
+2025-01-01 open Assets:Savings
+2025-01-01 open Liabilities:Credit-Card
+2025-01-01 open Assets:Investments
+
+2025-01-01 open Income:Salary
+
+2025-01-01 open Expenses:Rent
+2025-01-01 open Expenses:Utilities
+2025-01-01 open Expenses:Car:Petrol
+2025-01-01 open Expenses:Car:Registration
+2025-01-01 open Expenses:Eating-Out
+2025-01-01 open Expenses:Hobbies
+
+; January
+2025-01-05 * "Work"
+    Income:Salary                       -2000.00 AUD
+    Assets:Checking                      2000.00 AUD
+
+2025-01-05 * "Internal transfer"
+    Assets:Checking                      -700.00 AUD
+    Assets:Savings                        500.00 AUD
+    Assets:Investments                    200.00 AUD
+
+2025-01-10 * "L. Lord"
+    Expenses:Rent                         800.00 AUD
+    Assets:Checking                      -800.00 AUD
+
+2025-01-12 * "McBurger's"
+    Expenses:Eating-Out                    45.00 AUD
+    Liabilities:Credit-Card               -45.00 AUD
+
+2025-01-15 * "Utility Co"
+    Expenses:Utilities                    120.00 AUD
+    Assets:Checking                      -120.00 AUD
+
+2025-01-16 * "Government"
+    Expenses:Car:Registration             400.00 AUD
+    Assets:Savings                       -400.00 AUD
+
+2025-01-22 * "Shell"
+    Expenses:Car:Petrol                    80.00 AUD
+    Liabilities:Credit-Card               -80.00 AUD
+
+2025-01-29 * "HobbyStore"
+    Expenses:Hobbies                       33.00 AUD
+    Assets:Checking                       -33.00 AUD
+
+2025-01-30 * "Credit card company"
+    Liabilities:Credit-Card               125.00 AUD
+    Assets:Checking                      -125.00 AUD

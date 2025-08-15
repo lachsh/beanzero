@@ -1,0 +1,30 @@
+name: "Personal"
+ledger: ./ledger.bean
+currency: "AUD"
+start: 2025-01
+accounts:
+  - Assets:Checking
+  - Assets:Savings
+  - Liabilities:Credit-Card
+groups:
+  - name: Necessary expenses
+    categories:
+    - name: Rent
+      accounts: Expenses:Rent
+    - name: Utilities
+      accounts: Expenses:Utilities
+    - name: Car
+      accounts:
+      - Expenses:Car:Petrol
+      - Expenses:Car:Registration
+  - name: Living large
+    categories:
+    - name: Eating out
+      accounts: Expenses:Eating-Out
+    - name: Hobbies
+      accounts: Expenses:Hobbies
+  - name: For the future
+    categories:
+    - name: Investments
+      accounts: Assets:Investments
+    - name: Rainy day fund
