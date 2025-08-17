@@ -58,7 +58,6 @@ TbaSummary {
     }
 }
 
-
 Calendar {
     layout: grid;
     grid-size: 6 3;
@@ -95,11 +94,6 @@ Calendar {
             background: $background-lighten-3;
         }
     }
-}
-
-
-.month.active {
-    background: $accent-lighten-1;
 }
 
 CategoryTable {
