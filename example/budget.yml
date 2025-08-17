@@ -1,8 +1,9 @@
 name: "Personal"
+theme: nord
 ledger: ./ledger.bean
 storage: ./budget.zbb.json
 currency: "AUD"
-theme: nord
+locale: en_AU
 accounts:
   - Assets:Checking
   - Assets:Savings
