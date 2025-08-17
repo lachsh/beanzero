@@ -2,7 +2,7 @@ name: "Personal"
 ledger: ./ledger.bean
 storage: ./budget.zbb.json
 currency: "AUD"
-start: 2025-01
+theme: nord
 accounts:
   - Assets:Checking
   - Assets:Savings

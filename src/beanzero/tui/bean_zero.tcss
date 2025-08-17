@@ -4,92 +4,102 @@ TopBar {
     layout: horizontal;
 }
 
-#calendar {
-    width: 1fr;
-    background: $error;
-}
-
-ToBeBudgeted {
+ToBeAssigned {
     width: auto;
     layout: horizontal;
     padding-left: 0;
     border-left: outer $foreground;
     background: $success;
+    #tba-left-label {
+        width: 3;
+        content-align: center middle;
+        background: $success-muted;
+        color: $text;
+        text-style: bold;
+        padding: 0 1;
+    }
+    #tba-digits {
+        width: auto;
+        min-width: 25;
+        text-align: right;
+        background: $success-muted;
+        padding: 0 1;
+        color: $text-success;
+    }
+
+    &.negative {
+        background: $error;
+        #tba-left-label {
+            background: $error-muted;
+        }
+        #tba-digits {
+            color: $text-error;
+            background: $error-muted;
+        }
+    }
 }
 
-#tbb-left {
-    width: 3;
-    content-align: center middle;
-    background: $success-muted;
-    color: $text;
-    text-style: bold;
-}
-
-#tbb {
-    width: auto;
-    min-width: 25;
-    text-align: right;
-    background: $success-muted;
-    padding: 0 1;
-    color: $text-success;
-}
-
-ToBeBudgeted.negative {
-    background: $error;
-}
-ToBeBudgeted.negative #tbb-left {
-    background: $error-muted;
-}
-ToBeBudgeted.negative #tbb {
-    color: $text-error;
-    background: $error-muted;
-}
-
-Calendar {
-    layout: grid;
-    grid-size: 6 3;
-    width: 24;
-    background: $primary;
-}
-
-#year {
-    column-span: 6;
-    text-align: center;
-    background: $accent;
-    color: $text;
-}
-
-.month {
-    width: 4;
-    background: $primary-lighten-3;
-    text-align: center;
-    color: $text;
-}
-.month.odd {
-    background: $primary-lighten-2;
-}
-.month.active {
-    background: $accent-lighten-1;
-}
-
-TbbSummary {
+TbaSummary {
     width: 1fr;
     layout: grid;
     grid-size: 2 3;
     grid-columns: 1fr auto;
     grid-gutter: 0 2;
     padding: 0 2;
+    .key {
+        text-align: right;
+        color: $text-muted;
+        text-style: italic;
+    }
+    .value {
+        text-align: right;
+        color: $text;
+        text-style: bold;
+    }
 }
 
-TbbSummary .key {
-    text-align: right;
-    color: $text-muted;
-    text-style: italic;
+
+Calendar {
+    layout: grid;
+    grid-size: 6 3;
+    width: 36;
+    background: $primary;
+    #year {
+        column-span: 6;
+        text-align: center;
+        background: $accent;
+        color: $text;
+    }
+    CalendarMonth {
+        width: 6;
+        background: $primary-lighten-3;
+        text-align: center;
+        color: $text;
+        &.odd {
+            background: $primary-lighten-2;
+        }
+        &.active {
+            background: $accent-lighten-3 !important;
+        }
+        &.current {
+            background: $foreground-lighten-3;
+        }
+        &:disabled {
+            background: $primary-muted 80%;
+            color: $text-muted;
+        }
+        &.odd:disabled {
+            background: $primary-muted;
+        }
+        &:hover {
+            background: $background-lighten-3;
+        }
+    }
 }
-TbbSummary .value {
-    text-align: right;
-    color: $text;
-    text-style: bold;
+
+
+.month.active {
+    background: $accent-lighten-1;
 }
 
 CategoryTable {

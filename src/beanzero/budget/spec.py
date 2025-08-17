@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import datetime
+import locale
 import typing
 from decimal import Decimal
 from functools import total_ordering
 from pathlib import Path
 
+import babel
+import babel.numbers
 import beancount.core.amount as amt
 import beancount.core.data as beandata
 import yaml
@@ -44,12 +47,12 @@ class Month:
         return Month(now.month, now.year)
 
     def __add__(self, months: int) -> Month:
-        new_month = self.month + months
+        new_month = self.month + months - 1
         new_year = self.year
-        if new_month > 12 or new_month < 0:
+        if new_month >= 12 or new_month < 0:
             new_year += new_month // 12
             new_month = new_month % 12
-        return Month(new_month, new_year)
+        return Month(new_month + 1, new_year)
 
     def __sub__(self, other: int | Month) -> int | Month:
         if isinstance(other, int):
@@ -135,13 +138,14 @@ class BudgetSpec:
     This is loaded from a config file, and is immutable while the program is running.
     """
 
-    name: str
     ledger: Path = field()
     storage: Path = field()
     currency: beandata.Currency
-    start: Month
     accounts: BeanAccountCollection
     groups: list[CategoryGroup] = field()
+    name: str | None = field(default=None)
+    locale: str | None = field(default=None)
+    theme: str | None = field(default=None)
 
     @classmethod
     def load(cls, fp: typing.IO):
@@ -194,3 +198,37 @@ class BudgetSpec:
                         )
 
         return found_category_key
+
+    def format_currency(
+        self, amount: amt.Amount, symbol_override: bool | None = None
+    ) -> str:
+        # TODO specify additional settings
+
+        if amount.number is None:
+            raise ValueError
+
+        currency_locale = (
+            self.locale
+            or locale.getlocale(locale.LC_MONETARY)[0]
+            or locale.getlocale()[0]
+        )
+
+        if symbol_override is not None and not symbol_override:
+            currency = ""
+        else:
+            currency = self.currency
+
+        return babel.numbers.format_currency(
+            amount.number,
+            currency,
+            locale=currency_locale,
+        )
+
+    @property
+    def text_locale(self) -> babel.Locale:
+        locale_string = (
+            self.locale
+            or locale.getlocale(locale.LC_MESSAGES)[0]
+            or locale.getlocale()[0]
+        )
+        return babel.Locale.parse(locale_string)

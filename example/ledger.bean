@@ -1,16 +1,20 @@
-2025-01-01 open Assets:Checking
-2025-01-01 open Assets:Savings
-2025-01-01 open Liabilities:Credit-Card
-2025-01-01 open Assets:Investments
+2024-01-01 open Assets:Checking
+2024-01-01 open Assets:Savings
+2024-01-01 open Liabilities:Credit-Card
+2024-01-01 open Assets:Investments
 
-2025-01-01 open Income:Salary
+2024-01-01 open Income:Salary
 
-2025-01-01 open Expenses:Rent
-2025-01-01 open Expenses:Utilities
-2025-01-01 open Expenses:Car:Petrol
-2025-01-01 open Expenses:Car:Registration
-2025-01-01 open Expenses:Eating-Out
-2025-01-01 open Expenses:Hobbies
+2024-01-01 open Expenses:Rent
+2024-01-01 open Expenses:Utilities
+2024-01-01 open Expenses:Car:Petrol
+2024-01-01 open Expenses:Car:Registration
+2024-01-01 open Expenses:Eating-Out
+2024-01-01 open Expenses:Hobbies
+
+2024-12-01 * "Christmas bonus"
+    Income:Salary                        -500.00 AUD
+    Assets:Checking                       500.00 AUD
 
 ; January
 2025-01-05 * "Work"

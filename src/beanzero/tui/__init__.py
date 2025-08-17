@@ -1,6 +1,7 @@
-from .app import BeanZeroApp
+from beanzero.tui.app import BeanZeroApp
 
 app = BeanZeroApp()
+
 
 if __name__ == "__main__":
     app.run()

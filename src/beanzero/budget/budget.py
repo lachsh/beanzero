@@ -72,15 +72,60 @@ class MonthlyTotals:
     # per-category amounts
     carryover: defaultdict[CategoryKey, amt.Amount]
     spending: defaultdict[CategoryKey, amt.Amount]
-    budgeting: defaultdict[CategoryKey, amt.Amount]
+    assigning: defaultdict[CategoryKey, amt.Amount]
+
+    @staticmethod
+    def aggregate_funding(spec: BudgetSpec, txs: list[BudgetTransaction]):
+        return functools.reduce(
+            amt.add, map(operator.attrgetter("funding"), txs), spec.zero
+        )
+
+    @staticmethod
+    def aggregate_spending(spec: BudgetSpec, txs: list[BudgetTransaction]):
+        spending = defaultdict(lambda: spec.zero)
+        for tx in txs:
+            for k, v in tx.spending.items():
+                spending[k] = amt.add(spending[k], v)
+        return spending
+
+    @classmethod
+    def from_transactions(
+        cls,
+        spec: BudgetSpec,
+        txs: list[BudgetTransaction],
+        holding: amt.Amount,
+        assigning: defaultdict[CategoryKey, amt.Amount],
+        prev_month: MonthlyTotals | None = None,
+    ) -> MonthlyTotals:
+        if prev_month is None:
+            previous_tba = spec.zero
+            previous_holding = spec.zero
+            previous_overspending = spec.zero
+            carryover = defaultdict(lambda: spec.zero)
+        else:
+            previous_tba = prev_month.to_be_assigned
+            previous_holding = prev_month.holding
+            previous_overspending = prev_month.overspending
+            carryover = prev_month.carryover_balances
+        return MonthlyTotals(
+            spec,
+            previous_tba,
+            previous_holding,
+            previous_overspending,
+            cls.aggregate_funding(spec, txs),
+            holding,
+            carryover,
+            cls.aggregate_spending(spec, txs),
+            assigning,
+        )
 
     @property
     def total_spending(self) -> amt.Amount:
         return functools.reduce(amt.add, self.spending.values(), self.spec.zero)
 
     @property
-    def total_budgeting(self) -> amt.Amount:
-        return functools.reduce(amt.add, self.budgeting.values(), self.spec.zero)
+    def total_assigning(self) -> amt.Amount:
+        return functools.reduce(amt.add, self.assigning.values(), self.spec.zero)
 
     @property
     def category_balances(self) -> defaultdict[CategoryKey, amt.Amount]:
@@ -88,7 +133,7 @@ class MonthlyTotals:
         for key in self.spec.all_category_keys:
             balances[key] = self.carryover[key]
             balances[key] = amt.add(balances[key], self.spending[key])
-            balances[key] = amt.add(balances[key], self.budgeting[key])
+            balances[key] = amt.add(balances[key], self.assigning[key])
         return balances
 
     @property
@@ -103,7 +148,7 @@ class MonthlyTotals:
     @property
     def overspending(self) -> amt.Amount:
         balances = self.category_balances
-        neg_balances = [a for a in balances.values() if a.number < 0]
+        neg_balances = [a for a in balances.values() if a.number < 0]  # type: ignore
         overspending = functools.reduce(amt.add, neg_balances, self.spec.zero)
         return overspending
 
@@ -113,7 +158,7 @@ class MonthlyTotals:
         tba = amt.add(tba, self.previous_holding)
         tba = amt.add(tba, self.previous_overspending)
         tba = amt.add(tba, self.funding)
-        tba = amt.sub(tba, self.total_budgeting)
+        tba = amt.sub(tba, self.total_assigning)
         tba = amt.sub(tba, self.holding)
         return tba
 
@@ -142,7 +187,6 @@ class Budget:
             if isinstance(directive, beandata.Transaction):
                 if tx := self.convert_transaction(directive):
                     self.monthly_transactions[tx.month].append(tx)
-        self.latest_month = max(self.monthly_transactions.keys()) + 1
 
         # Load our budget data store
         with self.spec.storage.open("r") as storage_f:
@@ -151,36 +195,33 @@ class Budget:
             # required
             self._store = BudgetStore.load(storage_f, self.spec.zero)
 
+        # Determine our month bounds
+        self.ledger_start_month = min(self.monthly_transactions.keys())
+        self.latest_budget_month = max(self._store.assigned.keys())
+        self.latest_month = max(
+            Month.now() + 1,
+            self.latest_budget_month + 1,
+            max(self.monthly_transactions.keys()),
+        )
+
         # Calculate monthly totals from transaction and budgeting data
         self.monthly_totals: dict[Month, MonthlyTotals] = dict()
 
-        self.monthly_totals[self.spec.start] = MonthlyTotals(
-            spec=self.spec,
-            previous_tba=self.spec.zero,
-            previous_holding=self.spec.zero,
-            previous_overspending=self.spec.zero,
-            funding=self.aggregate_funding(self.monthly_transactions[self.spec.start]),
-            holding=self._store.assigned[self.spec.start].held,
-            carryover=defaultdict(lambda: self.spec.zero),
-            spending=self.aggregate_spending(
-                self.monthly_transactions[self.spec.start]
-            ),
-            budgeting=self._store.assigned[self.spec.start].categories,
+        self.monthly_totals[self.ledger_start_month] = MonthlyTotals.from_transactions(
+            self.spec,
+            self.monthly_transactions[self.ledger_start_month],
+            self._store.assigned[self.ledger_start_month].held,
+            self._store.assigned[self.ledger_start_month].categories,
         )
 
-        month = self.spec.start + 1
+        month = self.ledger_start_month + 1
         while month <= self.latest_month:
-            prev = self.monthly_totals[month - 1]
-            self.monthly_totals[month] = MonthlyTotals(
-                spec=self.spec,
-                previous_tba=prev.to_be_assigned,
-                previous_holding=prev.holding,
-                previous_overspending=prev.overspending,
-                funding=self.aggregate_funding(self.monthly_transactions[month]),
-                holding=self._store.assigned[month].held,
-                carryover=prev.carryover_balances,
-                spending=self.aggregate_spending(self.monthly_transactions[month]),
-                budgeting=self._store.assigned[month].categories,
+            self.monthly_totals[month] = MonthlyTotals.from_transactions(
+                self.spec,
+                self.monthly_transactions[month],
+                self._store.assigned[month].held,
+                self._store.assigned[month].categories,
+                prev_month=self.monthly_totals[month - 1],
             )
             month += 1
 
@@ -214,15 +255,3 @@ class Budget:
                 spending[cat] = amt.sub(spending[cat], posting.units)
 
         return BudgetTransaction(tx.date, flow, spending)
-
-    def aggregate_funding(self, txs: list[BudgetTransaction]):
-        return functools.reduce(
-            amt.add, map(operator.attrgetter("funding"), txs), self.spec.zero
-        )
-
-    def aggregate_spending(self, txs: list[BudgetTransaction]):
-        spending = defaultdict(lambda: self.spec.zero)
-        for tx in txs:
-            for k, v in tx.spending.items():
-                spending[k] = amt.add(spending[k], v)
-        return spending

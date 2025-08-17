@@ -10,6 +10,12 @@
                 "hobbies": "50",
                 "rainy-day-fund": "16"
             }
+        },
+        "2025-02": {
+            "held": "0",
+            "categories": {
+                "rainy-day-fund": "800"
+            }
         }
     }
 }
