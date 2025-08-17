@@ -91,7 +91,7 @@ Calendar {
             background: $primary-muted;
         }
         &:hover {
-            background: $background-lighten-3;
+            background: $boost;
         }
     }
 }
