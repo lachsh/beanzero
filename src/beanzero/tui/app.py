@@ -1,4 +1,5 @@
 import argparse
+import gettext
 from pathlib import Path
 
 from textual.app import App, ComposeResult
@@ -10,16 +11,18 @@ from beanzero.budget.budget import MonthlyTotals
 from beanzero.tui.category import CategoryTable
 from beanzero.tui.top_bar import TopBar
 
+_ = gettext.gettext
+
 
 class BeanZeroApp(App):
     TITLE = "Bean0"
     CSS_PATH = "bean_zero.tcss"
 
     BINDINGS = [
-        ("{", "change_month(-12)", "Previous year"),
-        ("}", "change_month(12)", "Next year"),
-        ("[", "change_month(-1)", "Previous month"),
-        ("]", "change_month(1)", "Next month"),
+        ("{", "change_month(-12)", _("Previous year")),
+        ("}", "change_month(12)", _("Next year")),
+        ("[", "change_month(-1)", _("Previous month")),
+        ("]", "change_month(1)", _("Next month")),
     ]
 
     budget: Budget
