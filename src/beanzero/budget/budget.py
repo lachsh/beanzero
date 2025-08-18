@@ -14,6 +14,7 @@ from attrs import define
 
 from beanzero.budget.spec import (
     BudgetSpec,
+    CategoryGroup,
     CategoryKey,
     Month,
 )
@@ -161,6 +162,18 @@ class MonthlyTotals:
         tba = amt.sub(tba, self.total_assigning)
         tba = amt.sub(tba, self.holding)
         return tba
+
+    def group_assigned(self, group: CategoryGroup) -> amt.Amount:
+        amounts = [self.assigning[cat.key] for cat in group.categories]
+        return functools.reduce(amt.add, amounts, self.spec.zero)
+
+    def group_spending(self, group: CategoryGroup) -> amt.Amount:
+        amounts = [self.spending[cat.key] for cat in group.categories]
+        return functools.reduce(amt.add, amounts, self.spec.zero)
+
+    def group_balance(self, group: CategoryGroup) -> amt.Amount:
+        amounts = [self.category_balances[cat.key] for cat in group.categories]
+        return functools.reduce(amt.add, amounts, self.spec.zero)
 
 
 class Budget:

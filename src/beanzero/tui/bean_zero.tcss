@@ -99,48 +99,48 @@ Calendar {
 CategoryTable {
     height: 1fr;
     padding-top: 1;
-}
+    layout: vertical;
 
-AvailableBubble {
-    width: 18;
-    text-align: right;
-}
-
-CategoryTable Horizontal {
-    width: 100%;
-    height: 1;
-    align-horizontal: center;
-}
-
-CategoryTable Horizontal:odd {
-    background: $background-lighten-1;
-}
-
-CategoryTable Horizontal:hover  {
-    background: $background-lighten-3;
-}
-
-CategoryTable Horizontal.category-group {
-    background: $secondary;
-    text-style: italic;
-    color: $text;
-    Amount {
-        color: $text;
+    CategoryGroup {
+        layout: vertical;
+        height: auto;
+        width: 100%;
     }
-}
 
-CategoryTable Amount.zero {
-    color: $foreground-muted;
-}
+    CategoryGroupHeader {
+        width: 100%;
+        height: 1;
+        align-horizontal: center;
+        layout: horizontal;
+    }
 
-CategoryTable Static, CategoryTable Amount {
-    width: 18;
-    height: 1;
-    padding: 0 1;
-    text-align: right;
-}
+    CategoryGroupHeader {
+        background: $secondary;
+        text-style: italic;
+        color: $text;
+        Amount, Amount.zero {
+            color: $text;
+        }
+    }
 
-CategoryTable Static {
-    text-align: left;
-    width: 16;
+    Amount {
+        height: 1;
+        width: auto;
+        color: $foreground;
+        &.zero {
+            color: $foreground-muted
+        }
+    }
+
+    .category-table--col-name {
+        width: 24;
+        text-align: left;
+    }
+
+    .category-table--col-assigned,
+    .category-table--col-spending,
+    .category-table--col-balance {
+        width: 20;
+        text-align: right;
+    }
 }

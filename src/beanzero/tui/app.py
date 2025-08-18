@@ -8,7 +8,7 @@ from textual.widgets import Footer, Header
 
 from beanzero.budget import Budget, BudgetSpec, Month
 from beanzero.budget.budget import MonthlyTotals
-from beanzero.tui.category import CategoryTable
+from beanzero.tui.category_table import CategoryTable
 from beanzero.tui.top_bar import TopBar
 
 _ = gettext.gettext
@@ -63,5 +63,5 @@ class BeanZeroApp(App):
     def compose(self) -> ComposeResult:
         yield Header()
         yield TopBar()
-        # yield CategoryTable()
+        yield CategoryTable()
         yield Footer()
