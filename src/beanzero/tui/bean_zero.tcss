@@ -98,16 +98,28 @@ Calendar {
 
 CategoryTable {
     height: 1fr;
-    padding-top: 1;
     layout: vertical;
 
     CategoryGroup {
         layout: vertical;
         height: auto;
         width: 100%;
+        padding-top: 1;
+
+        &:focus {
+            CategoryGroupHeader {
+                background: $accent;
+            }
+            CategoryRow {
+                background: $accent-muted 70%;
+            }
+            CategoryRow:odd {
+                background: $accent-muted;
+            }
+        }
     }
 
-    CategoryGroupHeader {
+    CategoryGroupHeader, CategoryRow {
         width: 100%;
         height: 1;
         align-horizontal: center;
@@ -121,20 +133,34 @@ CategoryTable {
         Amount, Amount.zero {
             color: $text;
         }
+
+        # to align with bubbles
+        .category-table--col-balance {
+            padding-right: 1;
+        }
+    }
+
+    CategoryRow:odd {
+        background: $background-lighten-1;
+    }
+
+    CategoryRow:focus {
+        background: $accent-darken-3;
     }
 
     Amount {
         height: 1;
         width: auto;
-        color: $foreground;
+        color: $text;
         &.zero {
-            color: $foreground-muted
+            color: $text-muted;
         }
     }
 
     .category-table--col-name {
         width: 24;
         text-align: left;
+        color: $text;
     }
 
     .category-table--col-assigned,

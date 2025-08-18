@@ -18,32 +18,27 @@ PL_PILL_RIGHT = "\ue0b4"
 class AvailableBubble(Widget):
     can_focus = False
 
-    amount = reactive("0.00")
-    goal_progress: reactive[float | None] = reactive(None)
+    amount: amt.Amount
+
+    def __init__(self, amount: amt.Amount, **kwargs):
+        self.amount = amount
+        super().__init__(**kwargs)
 
     def render(self) -> RenderResult:
         text = "$text"
-        if self.amount == "0.00":
+        fg = None
+        sym = None
+
+        if self.amount == self.app.spec.zero:
             bg = "$background-lighten-2"
-            fg = None
             text = "$foreground-muted"
-            sym = None
-        elif self.amount.startswith("-"):
+        elif self.amount < self.app.spec.zero:
             bg = "$error"
-            fg = "$error-lighten-3"
+            fg = "$text"
             sym = "!"
-        elif self.goal_progress == 1.0 or (
-            self.amount != "0.00" and self.goal_progress is None
-        ):
-            bg = "$success"
-            fg = "$success-lighten-3"
-            sym = "✔" if self.goal_progress == 1.0 else None
-        elif self.goal_progress and self.goal_progress <= 1.0:
-            bg = "$warning"
-            fg = "$text-muted"
-            sym = "⣴"
         else:
-            raise ValueError
+            bg = "$success"
+            fg = "$text"
 
         bubble_markup = (
             f"[{bg}]{PL_PILL_LEFT}[/]"
@@ -52,10 +47,9 @@ class AvailableBubble(Widget):
             + f"[{bg}]{PL_PILL_RIGHT}[/]"
         )
 
-        return Content.from_markup(bubble_markup, amount=self.amount)
-
-    def on_click(self):
-        self.amount = "0.00"
+        return Content.from_markup(
+            bubble_markup, amount=self.app.spec.format_currency(self.amount)
+        )
 
 
 class Amount(Widget):
@@ -77,6 +71,32 @@ class Amount(Widget):
             return self.app.spec.format_currency(self.amount)
         else:
             return ""
+
+
+class CategoryRow(Widget):
+    app: BeanZeroAppInterface
+    name: reactive[str] = reactive("", recompose=True)
+    assigned: reactive[amt.Amount | None] = reactive(None, recompose=True)
+    spending: reactive[amt.Amount | None] = reactive(None, recompose=True)
+    balance: reactive[amt.Amount | None] = reactive(None, recompose=True)
+
+    def __init__(self, **kwargs):
+        self.can_focus = True
+        super().__init__(**kwargs)
+
+    def compose(self) -> ComposeResult:
+        yield Static(self.name, classes="category-table--col-name")
+        yield Amount(
+            (self.assigned or self.app.spec.zero),
+            classes="category-table--col-assigned",
+        )
+        yield Amount(
+            (self.spending or self.app.spec.zero),
+            classes="category-table--col-spending",
+        )
+        yield AvailableBubble(
+            (self.balance or self.app.spec.zero), classes="category-table--col-balance"
+        )
 
 
 class CategoryGroupHeader(Widget):
@@ -102,20 +122,23 @@ class CategoryGroupHeader(Widget):
 
 
 class CategoryGroup(Widget):
-    can_focus = True
-
     group: spec.CategoryGroup
 
     def __init__(self, group: spec.CategoryGroup, **kwargs):
         self.group = group
+        self.can_focus = True
         super().__init__(**kwargs)
 
     def compose(self) -> ComposeResult:
         yield CategoryGroupHeader()
+        for category in self.group.categories:
+            yield CategoryRow()
 
     def on_mount(self):
         self.watch(self.app, "current_totals", self.app_watch_current_totals)
         self.query_one(CategoryGroupHeader).name = self.group.name
+        for category, widget in zip(self.group.categories, self.query(CategoryRow)):
+            widget.name = category.name
 
     def app_watch_current_totals(self, new: MonthlyTotals | None):
         if new is None:
@@ -124,6 +147,11 @@ class CategoryGroup(Widget):
         self.query_one(CategoryGroupHeader).assigned = new.group_assigned(self.group)
         self.query_one(CategoryGroupHeader).spending = new.group_spending(self.group)
         self.query_one(CategoryGroupHeader).balance = new.group_balance(self.group)
+
+        for category, widget in zip(self.group.categories, self.query(CategoryRow)):
+            widget.assigned = new.assigning[category.key]
+            widget.spending = new.spending[category.key]
+            widget.balance = new.category_balances[category.key]
 
 
 class CategoryTable(Widget):
