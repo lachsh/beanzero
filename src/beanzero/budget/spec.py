@@ -207,6 +207,12 @@ class BudgetSpec:
         if amount.number is None:
             raise ValueError
 
+        precision = babel.numbers.get_currency_precision(self.currency)
+        if -amount.number.as_tuple().exponent > precision:
+            raise ValueError(
+                f"Precision of {amount} exceeds {self.currency} precision {precision}"
+            )
+
         currency_locale = (
             self.locale
             or locale.getlocale(locale.LC_MONETARY)[0]
@@ -222,6 +228,7 @@ class BudgetSpec:
             amount.number,
             currency,
             locale=currency_locale,
+            decimal_quantization=False,
         )
 
     @property
