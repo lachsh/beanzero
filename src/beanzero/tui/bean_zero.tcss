@@ -144,7 +144,7 @@ CategoryTable {
         background: $background-lighten-1;
     }
 
-    CategoryRow:focus {
+    CategoryRow:focus, CategoryRow.editing {
         background: $accent-darken-3;
     }
 
@@ -168,5 +168,9 @@ CategoryTable {
     .category-table--col-balance {
         width: 20;
         text-align: right;
+        align-horizontal: right;
+        padding: 0;
+        height: 1;
+        border: none;
     }
 }

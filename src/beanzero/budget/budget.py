@@ -268,3 +268,28 @@ class Budget:
                 spending[cat] = amt.sub(spending[cat], posting.units)
 
         return BudgetTransaction(tx.date, flow, spending)
+
+    def update_assigned_amount(
+        self, month: Month, category: CategoryKey, amount: amt.Amount
+    ):
+        self._store.assigned[month].categories[category] = amount
+        # TODO: persist
+        while month <= self.latest_month:
+            if month == self.ledger_start_month:
+                self.monthly_totals[month] = MonthlyTotals.from_transactions(
+                    self.spec,
+                    self.monthly_transactions[self.ledger_start_month],
+                    self._store.assigned[self.ledger_start_month].held,
+                    self._store.assigned[self.ledger_start_month].categories,
+                )
+            else:
+                self.monthly_totals[month] = MonthlyTotals.from_transactions(
+                    self.spec,
+                    self.monthly_transactions[month],
+                    self._store.assigned[month].held,
+                    self._store.assigned[month].categories,
+                    prev_month=self.monthly_totals[month - 1],
+                )
+            month += 1
+
+        self._store.save(self.spec.storage, self.spec.zero)

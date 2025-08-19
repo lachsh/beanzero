@@ -4,6 +4,7 @@ import json
 import typing
 from collections import defaultdict
 from decimal import Decimal
+from pathlib import Path
 
 import beancount.core.amount as amt
 from attrs import define, field
@@ -39,6 +40,13 @@ class BudgetStore:
         store = get_store_converter(zero_val).structure(data, cls)
         return store
 
+    def save(self, path: Path, zero_val: amt.Amount):
+        data = get_store_converter(zero_val).unstructure(self)
+        tempfile = path.parent / f"{path.name}.write"
+        with tempfile.open("w") as write_f:
+            json.dump(data, write_f)
+        tempfile.rename(path)
+
 
 # we need a function rather than a global instance as the hooks need the
 # currency-specific zero amt.Amount for a particular budget
@@ -50,12 +58,16 @@ def get_store_converter(zero_val: amt.Amount) -> Converter:
     store_converter.register_structure_hook(
         amt.Amount, lambda a, _: amt.Amount(Decimal(a), zero_val.currency)
     )
+    store_converter.register_unstructure_hook(amt.Amount, lambda a: str(a.number))
+    store_converter.register_unstructure_hook(Month, lambda m: m.as_iso())
+
     hook = defaultdict_structure_factory(
         defaultdict[CategoryKey, amt.Amount],
         store_converter,
         default_factory=lambda: zero_val,
     )
     store_converter.register_structure_hook(defaultdict[CategoryKey, amt.Amount], hook)
+
     hook = defaultdict_structure_factory(
         defaultdict[Month, AssignedAmounts],
         store_converter,

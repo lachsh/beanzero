@@ -79,6 +79,9 @@ class Month:
     def __str__(self):
         return self.start_datetime().strftime("%B %Y")
 
+    def as_iso(self):
+        return f"{self.year}-{self.month:02d}"
+
 
 @spec_converter.register_structure_hook
 def parse_month(val: str, _) -> Month:

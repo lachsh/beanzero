@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import beancount.core.amount as amt
 from rich.text import Text
 from textual.app import ComposeResult, RenderResult
@@ -5,7 +7,7 @@ from textual.containers import Horizontal, Vertical
 from textual.content import Content
 from textual.reactive import reactive
 from textual.widget import Widget
-from textual.widgets import DataTable, Digits, Static
+from textual.widgets import DataTable, Digits, Input, Static
 
 import beanzero.budget.spec as spec
 from beanzero.budget.budget import MonthlyTotals
@@ -80,16 +82,24 @@ class CategoryRow(Widget):
     spending: reactive[amt.Amount | None] = reactive(None, recompose=True)
     balance: reactive[amt.Amount | None] = reactive(None, recompose=True)
 
-    def __init__(self, **kwargs):
+    editing_assigned: reactive[bool] = reactive(False, init=False)
+
+    BINDINGS = [("enter", "edit_assigned()", "Edit assigned amount")]
+
+    def __init__(self, category_key, **kwargs):
         self.can_focus = True
+        self.category_key = category_key
         super().__init__(**kwargs)
 
     def compose(self) -> ComposeResult:
         yield Static(self.name, classes="category-table--col-name")
-        yield Amount(
-            (self.assigned or self.app.spec.zero),
-            classes="category-table--col-assigned",
-        )
+        if self.editing_assigned:
+            yield Input(type="number", classes="category-table--col-assigned")
+        else:
+            yield Amount(
+                (self.assigned or self.app.spec.zero),
+                classes="category-table--col-assigned",
+            )
         yield Amount(
             (self.spending or self.app.spec.zero),
             classes="category-table--col-spending",
@@ -97,6 +107,41 @@ class CategoryRow(Widget):
         yield AvailableBubble(
             (self.balance or self.app.spec.zero), classes="category-table--col-balance"
         )
+
+    async def watch_editing_assigned(self, on):
+        #  if we're enabling editing, then focus the input box
+        if on:
+            self.add_class("editing")
+            await self.recompose()
+            self.query_one(Input).focus()
+
+        # otherwise extract the value and return to display
+        else:
+            new_input = self.query_one(Input).value
+            if new_input != "":
+                new_value = Decimal(new_input)
+                new_assigned = amt.Amount(new_value, self.app.spec.currency)
+                # TODO should probably be encapsulated in an action, this is messy...
+                self.app.budget.update_assigned_amount(
+                    self.app.current_month, self.category_key, new_assigned
+                )
+                self.app.current_totals = self.app.budget.monthly_totals[
+                    self.app.current_month
+                ]
+                self.app.mutate_reactive(self.app.__class__.current_totals)
+
+            await self.recompose()
+            self.focus()
+            self.remove_class("editing")
+
+    def on_descendant_blur(self, event):
+        self.editing_assigned = False
+
+    def on_input_submitted(self, event):
+        self.editing_assigned = False
+
+    def action_edit_assigned(self):
+        self.editing_assigned = True
 
 
 class CategoryGroupHeader(Widget):
@@ -132,7 +177,7 @@ class CategoryGroup(Widget):
     def compose(self) -> ComposeResult:
         yield CategoryGroupHeader()
         for category in self.group.categories:
-            yield CategoryRow()
+            yield CategoryRow(category.key)
 
     def on_mount(self):
         self.watch(self.app, "current_totals", self.app_watch_current_totals)
