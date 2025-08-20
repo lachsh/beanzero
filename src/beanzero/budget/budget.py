@@ -18,7 +18,7 @@ from beanzero.budget.spec import (
     CategoryKey,
     Month,
 )
-from beanzero.budget.store import BudgetStore
+from beanzero.budget.store import BudgetStore, get_store_converter
 
 
 @define(frozen=True)
@@ -202,11 +202,16 @@ class Budget:
                     self.monthly_transactions[tx.month].append(tx)
 
         # Load our budget data store
-        with self.spec.storage.open("r") as storage_f:
-            # we want to keep the store private and expose methods on Budget to ensure
-            # we can re-run validation and refresh all the MonthlyTotals and so on as
-            # required
-            self._store = BudgetStore.load(storage_f, self.spec.zero)
+        if self.spec.storage.exists():
+            with self.spec.storage.open("r") as storage_f:
+                # we want to keep the store private and expose methods on Budget to ensure
+                # we can re-run validation and refresh all the MonthlyTotals and so on as
+                # required
+                self._store = BudgetStore.load(storage_f, self.spec.zero)
+        else:
+            self._store = get_store_converter(self.spec.zero).structure(
+                dict(assigned=dict()), BudgetStore
+            )
 
         # Calculate monthly totals from transaction and budgeting data
         self.monthly_totals: dict[Month, MonthlyTotals] = dict()
@@ -250,7 +255,10 @@ class Budget:
     @property
     def latest_budget_month(self):
         self._store.prune()
-        return max(self._store.assigned.keys())
+        if len(self._store.assigned) > 0:
+            return max(self._store.assigned.keys())
+        else:
+            return Month.now()
 
     @property
     def latest_month(self):

@@ -160,10 +160,6 @@ class BudgetSpec:
     def check_ledger(self, _, ledger):
         assert self.ledger.exists()
 
-    @storage.validator  # type: ignore
-    def check_storage(self, _, ledger):
-        assert self.storage.exists()
-
     @groups.validator  # type: ignore
     def check_groups(self, _, groups: list[CategoryGroup]):
         # ensure we have unique category keys
