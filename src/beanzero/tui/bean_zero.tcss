@@ -99,6 +99,7 @@ Calendar {
 CategoryTable {
     height: 1fr;
     layout: vertical;
+    overflow-y: scroll;
 
     CategoryGroup {
         layout: vertical;
