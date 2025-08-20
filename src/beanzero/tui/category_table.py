@@ -1,5 +1,5 @@
 import gettext
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 import beancount.core.amount as amt
 from rich.text import Text
@@ -94,7 +94,25 @@ class CategoryRow(Widget):
             "edit_assigned()",
             _("Assign"),
             tooltip=_("Edit amount assigned to category."),
-        )
+        ),
+        Binding(
+            "=",
+            "edit_assigned('=')",
+            _("Set assigned"),
+            tooltip=_("Set amount assigned to category."),
+        ),
+        Binding(
+            "+",
+            "edit_assigned('+')",
+            _("Assign more"),
+            tooltip=_("Increase amount assigned to category."),
+        ),
+        Binding(
+            "-",
+            "edit_assigned('-')",
+            _("Assign less"),
+            tooltip=_("Decrease amount assigned to category."),
+        ),
     ]
 
     def __init__(self, category_key, **kwargs):
@@ -104,13 +122,13 @@ class CategoryRow(Widget):
 
     def compose(self) -> ComposeResult:
         yield Static(self.name, classes="category-table--col-name")
-        if self.editing_assigned:
-            yield Input(type="number", classes="category-table--col-assigned")
-        else:
-            yield Amount(
-                (self.assigned or self.app.spec.zero),
-                classes="category-table--col-assigned",
-            )
+        input = Input(classes="category-table--col-assigned", select_on_focus=False)
+        input.styles.display = "none"
+        yield input
+        yield Amount(
+            (self.assigned or self.app.spec.zero),
+            classes="category-table--col-assigned",
+        )
         yield Amount(
             (self.spending or self.app.spec.zero),
             classes="category-table--col-spending",
@@ -122,17 +140,50 @@ class CategoryRow(Widget):
     async def watch_editing_assigned(self, on):
         #  if we're enabling editing, then focus the input box
         if on:
+            self.query_one(
+                "Input.category-table--col-assigned"
+            ).styles.display = "block"
+            self.query_one(
+                "Amount.category-table--col-assigned"
+            ).styles.display = "none"
             self.add_class("editing")
-            await self.recompose()
             self.query_one(Input).focus()
 
         # otherwise extract the value and return to display
         else:
+            self.query_one("Input.category-table--col-assigned").styles.display = "none"
+            self.query_one(
+                "Amount.category-table--col-assigned"
+            ).styles.display = "block"
+
             new_input = self.query_one(Input).value
             if new_input != "":
-                new_value = Decimal(new_input)
-                new_assigned = amt.Amount(new_value, self.app.spec.currency)
-                self.app.action_set_assigned(self.category_key, new_assigned)
+                try:
+                    if new_input.startswith("+") or new_input.startswith("-"):
+                        new_value = self.app.current_totals.assigning[
+                            self.category_key
+                        ].number + Decimal(new_input)
+                    elif new_input.startswith("="):
+                        new_value = Decimal(new_input[1:])
+                    else:
+                        new_value = Decimal(new_input)
+                    new_assigned = amt.Amount(new_value, self.app.spec.currency)
+
+                    if not self.app.spec.is_amount_suitable_precision(new_assigned):
+                        self.app.notify(
+                            f"Amount {new_assigned} is too high precision for this budget",
+                            title="Assignment unchanged",
+                            severity="warning",
+                        )
+                    else:
+                        self.app.action_set_assigned(self.category_key, new_assigned)
+
+                except InvalidOperation:
+                    self.app.notify(
+                        f"Couldn't parse '{new_input}'",
+                        title="Assignment unchanged",
+                        severity="warning",
+                    )
 
             await self.recompose()
             self.focus()
@@ -144,7 +195,9 @@ class CategoryRow(Widget):
     def on_input_submitted(self, event):
         self.editing_assigned = False
 
-    def action_edit_assigned(self):
+    def action_edit_assigned(self, prepend: str | None = None):
+        if prepend is not None:
+            self.query_one(Input).value = prepend
         self.editing_assigned = True
 
 

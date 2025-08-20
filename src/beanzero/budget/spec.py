@@ -202,6 +202,10 @@ class BudgetSpec:
 
         return found_category_key
 
+    def is_amount_suitable_precision(self, amount: amt.Amount) -> bool:
+        precision = babel.numbers.get_currency_precision(self.currency)
+        return -amount.number.as_tuple().exponent <= precision
+
     def format_currency(
         self, amount: amt.Amount, symbol_override: bool | None = None
     ) -> str:
@@ -210,8 +214,7 @@ class BudgetSpec:
         if amount.number is None:
             raise ValueError
 
-        precision = babel.numbers.get_currency_precision(self.currency)
-        if -amount.number.as_tuple().exponent > precision:
+        if not self.is_amount_suitable_precision(amount):
             raise ValueError(
                 f"Precision of {amount} exceeds {self.currency} precision {precision}"
             )
