@@ -213,6 +213,13 @@ class Budget:
                 dict(assigned=dict()), BudgetStore
             )
 
+        for month, assignments in self._store.assigned.items():
+            for cat in assignments.categories.keys():
+                if cat not in self.spec.all_category_keys:
+                    raise ValueError(
+                        f"Budgeted amount for non-existent category '{cat}' found in {month}"
+                    )
+
         # Calculate monthly totals from transaction and budgeting data
         self.monthly_totals: dict[Month, MonthlyTotals] = dict()
         self.update_monthly_totals()
