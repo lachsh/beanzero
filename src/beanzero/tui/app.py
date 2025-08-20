@@ -4,6 +4,7 @@ from pathlib import Path
 
 import beancount.core.amount as amt
 from textual.app import App, ComposeResult
+from textual.binding import Binding
 from textual.reactive import reactive
 from textual.widgets import Footer, Header
 
@@ -21,10 +22,16 @@ class BeanZeroApp(App):
     CSS_PATH = "bean_zero.tcss"
 
     BINDINGS = [
-        ("{", "change_month(-12)", _("Previous year")),
-        ("}", "change_month(12)", _("Next year")),
-        ("[", "change_month(-1)", _("Previous month")),
-        ("]", "change_month(1)", _("Next month")),
+        Binding("{", "change_month(-12)", "⇇Y", tooltip=_("Go to previous year.")),
+        Binding("}", "change_month(12)", "Y⇉", tooltip=_("Go to next year.")),
+        Binding("[", "change_month(-1)", "←M", tooltip=_("Go to previous month.")),
+        Binding("]", "change_month(1)", "M→", tooltip=_("Go to next month.")),
+        Binding("j", "focus_next()", "↓", tooltip=_("Select next category.")),
+        Binding("k", "focus_previous()", "↑", tooltip=_("Select previous category.")),
+        Binding("J", "focus_next_group()", "↡", tooltip=_("Select next group.")),
+        Binding(
+            "K", "focus_previous_group()", "↟", tooltip=_("Select previous group.")
+        ),
     ]
 
     budget: Budget
@@ -74,3 +81,9 @@ class BeanZeroApp(App):
         yield TopBar()
         yield CategoryTable()
         yield Footer()
+
+    def action_focus_next_group(self):
+        return self.screen.focus_next("CategoryGroup")
+
+    def action_focus_previous_group(self):
+        return self.screen.focus_previous("CategoryGroup")

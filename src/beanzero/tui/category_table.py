@@ -1,8 +1,10 @@
+import gettext
 from decimal import Decimal
 
 import beancount.core.amount as amt
 from rich.text import Text
 from textual.app import ComposeResult, RenderResult
+from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.content import Content
 from textual.reactive import reactive
@@ -12,6 +14,8 @@ from textual.widgets import DataTable, Digits, Input, Static
 import beanzero.budget.spec as spec
 from beanzero.budget.budget import MonthlyTotals
 from beanzero.tui.interface import BeanZeroAppInterface
+
+_ = gettext.gettext
 
 PL_PILL_LEFT = "\ue0b6"
 PL_PILL_RIGHT = "\ue0b4"
@@ -84,7 +88,14 @@ class CategoryRow(Widget):
 
     editing_assigned: reactive[bool] = reactive(False, init=False)
 
-    BINDINGS = [("enter", "edit_assigned()", "Edit assigned amount")]
+    BINDINGS = [
+        Binding(
+            "enter",
+            "edit_assigned()",
+            _("Assign"),
+            tooltip=_("Edit amount assigned to category."),
+        )
+    ]
 
     def __init__(self, category_key, **kwargs):
         self.can_focus = True
