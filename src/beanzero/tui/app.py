@@ -2,12 +2,14 @@ import argparse
 import gettext
 from pathlib import Path
 
+import beancount.core.amount as amt
 from textual.app import App, ComposeResult
 from textual.reactive import reactive
 from textual.widgets import Footer, Header
 
 from beanzero.budget import Budget, BudgetSpec, Month
 from beanzero.budget.budget import MonthlyTotals
+from beanzero.budget.spec import CategoryKey
 from beanzero.tui.category_table import CategoryTable
 from beanzero.tui.top_bar import TopBar
 
@@ -59,6 +61,13 @@ class BeanZeroApp(App):
 
     def action_set_month(self, new: int):
         self.current_month = Month(new, self.current_month.year)
+
+    def action_set_assigned(self, key: CategoryKey, new_amount: amt.Amount):
+        self.budget.update_assigned_amount(self.current_month, key, new_amount)
+        self.current_totals = self.budget.monthly_totals[self.current_month]
+        # just make sure we refresh everything
+        self.mutate_reactive(BeanZeroApp.current_totals)
+        self.mutate_reactive(BeanZeroApp.current_month)
 
     def compose(self) -> ComposeResult:
         yield Header()

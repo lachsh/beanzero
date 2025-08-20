@@ -121,14 +121,7 @@ class CategoryRow(Widget):
             if new_input != "":
                 new_value = Decimal(new_input)
                 new_assigned = amt.Amount(new_value, self.app.spec.currency)
-                # TODO should probably be encapsulated in an action, this is messy...
-                self.app.budget.update_assigned_amount(
-                    self.app.current_month, self.category_key, new_assigned
-                )
-                self.app.current_totals = self.app.budget.monthly_totals[
-                    self.app.current_month
-                ]
-                self.app.mutate_reactive(self.app.__class__.current_totals)
+                self.app.action_set_assigned(self.category_key, new_assigned)
 
             await self.recompose()
             self.focus()

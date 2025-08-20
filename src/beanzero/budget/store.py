@@ -40,7 +40,20 @@ class BudgetStore:
         store = get_store_converter(zero_val).structure(data, cls)
         return store
 
+    def prune(self):
+        # Delete empty category amounts
+        for amounts in self.assigned.values():
+            for category in list(amounts.categories.keys()):
+                if amounts.categories[category] == amounts.categories.default_factory():
+                    del amounts.categories[category]
+
+        # Delete empty months
+        for months in list(self.assigned.keys()):
+            if self.assigned[months] == self.assigned.default_factory():
+                del self.assigned[months]
+
     def save(self, path: Path, zero_val: amt.Amount):
+        self.prune()
         data = get_store_converter(zero_val).unstructure(self)
         tempfile = path.parent / f"{path.name}.write"
         with tempfile.open("w") as write_f:

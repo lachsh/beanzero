@@ -208,35 +208,9 @@ class Budget:
             # required
             self._store = BudgetStore.load(storage_f, self.spec.zero)
 
-        # Determine our month bounds
-        self.ledger_start_month = min(self.monthly_transactions.keys())
-        self.latest_budget_month = max(self._store.assigned.keys())
-        self.latest_month = max(
-            Month.now() + 1,
-            self.latest_budget_month + 1,
-            max(self.monthly_transactions.keys()),
-        )
-
         # Calculate monthly totals from transaction and budgeting data
         self.monthly_totals: dict[Month, MonthlyTotals] = dict()
-
-        self.monthly_totals[self.ledger_start_month] = MonthlyTotals.from_transactions(
-            self.spec,
-            self.monthly_transactions[self.ledger_start_month],
-            self._store.assigned[self.ledger_start_month].held,
-            self._store.assigned[self.ledger_start_month].categories,
-        )
-
-        month = self.ledger_start_month + 1
-        while month <= self.latest_month:
-            self.monthly_totals[month] = MonthlyTotals.from_transactions(
-                self.spec,
-                self.monthly_transactions[month],
-                self._store.assigned[month].held,
-                self._store.assigned[month].categories,
-                prev_month=self.monthly_totals[month - 1],
-            )
-            month += 1
+        self.update_monthly_totals()
 
     def convert_transaction(self, tx: beandata.Transaction) -> BudgetTransaction | None:
         # Scan through postings for overall budget flow
@@ -269,12 +243,28 @@ class Budget:
 
         return BudgetTransaction(tx.date, flow, spending)
 
-    def update_assigned_amount(
-        self, month: Month, category: CategoryKey, amount: amt.Amount
-    ):
-        self._store.assigned[month].categories[category] = amount
-        # TODO: persist
+    @property
+    def ledger_start_month(self):
+        return min(self.monthly_transactions.keys())
+
+    @property
+    def latest_budget_month(self):
+        self._store.prune()
+        return max(self._store.assigned.keys())
+
+    @property
+    def latest_month(self):
+        return max(
+            Month.now() + 1,
+            self.latest_budget_month + 1,
+            max(self.monthly_transactions.keys()),
+        )
+
+    def update_monthly_totals(self, from_month: Month | None = None):
+        month = from_month or self.ledger_start_month
+        print(month, self.latest_month)
         while month <= self.latest_month:
+            print(month, self.latest_month)
             if month == self.ledger_start_month:
                 self.monthly_totals[month] = MonthlyTotals.from_transactions(
                     self.spec,
@@ -292,4 +282,9 @@ class Budget:
                 )
             month += 1
 
+    def update_assigned_amount(
+        self, month: Month, category: CategoryKey, amount: amt.Amount
+    ):
+        self._store.assigned[month].categories[category] = amount
+        self.update_monthly_totals(from_month=month)
         self._store.save(self.spec.storage, self.spec.zero)
