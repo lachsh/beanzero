@@ -57,7 +57,7 @@ class BudgetStore:
         data = get_store_converter(zero_val).unstructure(self)
         tempfile = path.parent / f"{path.name}.write"
         with tempfile.open("w") as write_f:
-            json.dump(data, write_f)
+            json.dump(data, write_f, indent=2)
         tempfile.rename(path)
 
 
