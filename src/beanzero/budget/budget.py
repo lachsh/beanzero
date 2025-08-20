@@ -253,7 +253,11 @@ class Budget:
 
                 spending[cat] = amt.sub(spending[cat], posting.units)
 
-        return BudgetTransaction(tx.date, flow, spending)
+        btx = BudgetTransaction(tx.date, flow, spending)
+        if btx.funding < self.spec.zero:
+            raise ValueError(f"Negative funding for transaction {tx}")
+
+        return btx
 
     @property
     def ledger_start_month(self):
