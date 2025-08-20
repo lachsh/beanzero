@@ -262,9 +262,7 @@ class Budget:
 
     def update_monthly_totals(self, from_month: Month | None = None):
         month = from_month or self.ledger_start_month
-        print(month, self.latest_month)
         while month <= self.latest_month:
-            print(month, self.latest_month)
             if month == self.ledger_start_month:
                 self.monthly_totals[month] = MonthlyTotals.from_transactions(
                     self.spec,
