@@ -96,10 +96,14 @@ Calendar {
     }
 }
 
+#spacer {
+    # hatch: "⠢" $secondary;
+    hatch: "▂" $secondary 50%;
+}
+
 CategoryTable {
     height: 1fr;
     layout: vertical;
-    border-top: inner $secondary-muted;
 
     CategoryGroup {
         layout: vertical;
@@ -133,7 +137,6 @@ CategoryTable {
     }
 
     #column-titles {
-        height: 1;
         padding-right: 1; # to account for scrollbar
         color: $text-secondary;
         background: $secondary-muted;
@@ -158,8 +161,11 @@ CategoryTable {
         }
     }
 
-    CategoryRow:odd {
+    CategoryRow {
         background: $background-lighten-1;
+    }
+    CategoryRow:odd {
+        background: $background-lighten-2;
     }
 
     CategoryRow:focus, CategoryRow.editing {
