@@ -99,13 +99,13 @@ Calendar {
 CategoryTable {
     height: 1fr;
     layout: vertical;
-    overflow-y: scroll;
+    border-top: inner $secondary-muted;
 
     CategoryGroup {
         layout: vertical;
         height: auto;
         width: 100%;
-        padding-top: 1;
+        padding-bottom: 1;
 
         &:focus {
             CategoryGroupHeader {
@@ -120,11 +120,28 @@ CategoryTable {
         }
     }
 
-    CategoryGroupHeader, CategoryRow {
+    CategoryGroupHeader, CategoryRow, #column-titles {
         width: 100%;
         height: 1;
         align-horizontal: center;
         layout: horizontal;
+        color: $text;
+    }
+
+    #categories {
+        overflow-y: scroll;
+    }
+
+    #column-titles {
+        height: 1;
+        padding-right: 1; # to account for scrollbar
+        color: $text-secondary;
+        background: $secondary-muted;
+
+        # to align with bubbles
+        .category-table--col-balance {
+            padding-right: 1;
+        }
     }
 
     CategoryGroupHeader {
@@ -161,7 +178,6 @@ CategoryTable {
     .category-table--col-name {
         width: 40;
         text-align: left;
-        color: $text;
     }
 
     .category-table--col-assigned,

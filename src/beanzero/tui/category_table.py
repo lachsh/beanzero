@@ -260,5 +260,11 @@ class CategoryTable(Widget):
     app: BeanZeroAppInterface
 
     def compose(self) -> ComposeResult:
-        for group in self.app.spec.groups:
-            yield CategoryGroup(group)
+        with Horizontal(id="column-titles"):
+            yield Static(_("Name"), classes="category-table--col-name")
+            yield Static(_("Assigned"), classes="category-table--col-assigned")
+            yield Static(_("Spent"), classes="category-table--col-spending")
+            yield Static(_("Balance"), classes="category-table--col-balance")
+        with Vertical(id="categories"):
+            for group in self.app.spec.groups:
+                yield CategoryGroup(group)
