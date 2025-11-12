@@ -141,8 +141,8 @@ class BudgetSpec:
     This is loaded from a config file, and is immutable while the program is running.
     """
 
-    ledger: Path = field()
-    storage: Path = field()
+    ledger: Path = field(converter=Path.resolve)
+    storage: Path = field(converter=Path.resolve)
     currency: beandata.Currency
     accounts: BeanAccountCollection
     groups: list[CategoryGroup] = field()
@@ -211,9 +211,7 @@ class BudgetSpec:
             raise ValueError
 
         if not self.is_amount_suitable_precision(amount):
-            raise ValueError(
-                f"Precision of {amount} exceeds {self.currency} precision {precision}"
-            )
+            raise ValueError(f"Precision of {amount} exceeds {self.currency} precision")
 
         currency_locale = (
             self.locale

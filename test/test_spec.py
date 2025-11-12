@@ -1,6 +1,11 @@
+import os
+from decimal import Decimal
+from pathlib import Path
+
+import beancount.core.amount as amt
 import pytest
 
-from beanzero.budget.spec import Month
+from beanzero.budget.spec import BudgetSpec, Month
 
 
 class TestMonth:
@@ -50,3 +55,74 @@ class TestMonth:
     def test_month_iso_roundtrip(self):
         m = Month(12, 1999)
         assert m.from_string(m.as_iso()) == m
+
+
+@pytest.fixture
+def spec(request):
+    filename = request.node.get_closest_marker("spec_file").args[0]
+    cwd = os.getcwd()
+    os.chdir("./test/data")
+    with Path(filename).open("r") as spec_f:
+        spec = BudgetSpec.load(spec_f)
+    os.chdir(cwd)
+    return spec
+
+
+@pytest.mark.spec_file("sample-budget.yml")
+class TestNormalBudgetSpec:
+    def test_spec_name(self, spec):
+        assert spec.name == "Personal Budget"
+
+    def test_spec_theme(self, spec):
+        assert spec.theme == "nord"
+
+    def test_spec_currency(self, spec):
+        assert spec.currency == "AUD"
+
+    def test_spec_locale(self, spec):
+        assert spec.locale == "en_AU"
+
+    def test_ledger_is_found_relative(self, spec):
+        assert spec.ledger.resolve() == Path("./test/data/sample-budget.bean").resolve()
+
+    def test_zero_matches_currency(self, spec):
+        assert spec.zero == amt.Amount(Decimal("0"), "AUD")
+
+    def test_basic_account_to_category(self, spec):
+        assert spec.get_account_category("Expenses:Rent") == "rent"
+        assert spec.get_account_category("Expenses:Car:Petrol") == "car"
+        assert spec.get_account_category("Assets:Investments") == "investments"
+        assert spec.get_account_category("Assets:Savings") is None
+        assert spec.get_account_category("Expenses:Off-Budget") is None
+
+    def test_all_category_keys(self, spec):
+        assert spec.all_category_keys == [
+            "rent",
+            "utilities",
+            "car",
+            "eating-out",
+            "hobbies",
+            "investments",
+            "rainy-day-fund",
+        ]
+
+    def test_loaded_groups(self, spec):
+        assert len(spec.groups) == 3
+        necessary = spec.groups[0]
+        assert necessary.name == "Necessary expenses"
+        assert len(necessary.categories) == 3
+        assert necessary.categories[0].name == "Rent"
+
+    def test_suitable_precision(self, spec):
+        assert spec.is_amount_suitable_precision(amt.Amount(Decimal("1000.12"), "AUD"))
+        assert not spec.is_amount_suitable_precision(
+            amt.Amount(Decimal("999.999"), "AUD")
+        )
+
+    def test_currency_formatting(self, spec):
+        assert (
+            spec.format_currency(amt.Amount(Decimal("1123.45"), "AUD")) == "$1,123.45"
+        )
+        assert (
+            spec.format_currency(amt.Amount(Decimal("-1123.45"), "AUD")) == "-$1,123.45"
+        )

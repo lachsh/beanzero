@@ -1,6 +1,6 @@
-name: "Personal"
+name: "Personal Budget"
 theme: nord
-ledger: ./ledger.bean
+ledger: ./sample-budget.bean
 storage: ./budget.zbb.json
 currency: "AUD"
 locale: en_AU
