@@ -58,10 +58,10 @@ class TestMonth:
 
 
 @pytest.fixture
-def spec(request):
+def spec(request, data_dir):
     filename = request.node.get_closest_marker("spec_file").args[0]
     cwd = os.getcwd()
-    os.chdir("./test/data")
+    os.chdir(data_dir)
     with Path(filename).open("r") as spec_f:
         spec = BudgetSpec.load(spec_f)
     os.chdir(cwd)
@@ -82,8 +82,8 @@ class TestNormalBudgetSpec:
     def test_spec_locale(self, spec):
         assert spec.locale == "en_AU"
 
-    def test_ledger_is_found_relative(self, spec):
-        assert spec.ledger.resolve() == Path("./test/data/sample-budget.bean").resolve()
+    def test_ledger_is_found_relative(self, spec, data_dir):
+        assert spec.ledger.resolve() == data_dir / "sample-budget.bean"
 
     def test_zero_matches_currency(self, spec):
         assert spec.zero == amt.Amount(Decimal("0"), "AUD")
