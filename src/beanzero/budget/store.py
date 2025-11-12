@@ -9,7 +9,7 @@ from pathlib import Path
 import beancount.core.amount as amt
 from attrs import define, field
 from cattrs import Converter
-from cattrs.cols import defaultdict_structure_factory
+from cattrs.cols import defaultdict_structure_factory, is_defaultdict
 
 from beanzero.budget.spec import CategoryKey, Month, spec_converter
 
@@ -79,7 +79,8 @@ def get_store_converter(zero_val: amt.Amount) -> Converter:
         store_converter,
         default_factory=lambda: zero_val,
     )
-    store_converter.register_structure_hook(defaultdict[CategoryKey, amt.Amount], hook)
+
+    store_converter.register_structure_hook_func(is_defaultdict, hook)
 
     hook = defaultdict_structure_factory(
         defaultdict[Month, AssignedAmounts],
@@ -88,6 +89,6 @@ def get_store_converter(zero_val: amt.Amount) -> Converter:
             zero_val, defaultdict(lambda: zero_val)
         ),
     )
-    store_converter.register_structure_hook(defaultdict[Month, AssignedAmounts], hook)
+    store_converter.register_structure_hook_func(is_defaultdict, hook)
 
     return store_converter
