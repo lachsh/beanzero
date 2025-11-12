@@ -96,6 +96,11 @@ Calendar {
     }
 }
 
+#spacer {
+    # hatch: "⠢" $secondary;
+    hatch: "▂" $secondary 50%;
+}
+
 CategoryTable {
     height: 1fr;
     layout: vertical;
@@ -104,7 +109,7 @@ CategoryTable {
         layout: vertical;
         height: auto;
         width: 100%;
-        padding-top: 1;
+        padding-bottom: 1;
 
         &:focus {
             CategoryGroupHeader {
@@ -119,11 +124,27 @@ CategoryTable {
         }
     }
 
-    CategoryGroupHeader, CategoryRow {
+    CategoryGroupHeader, CategoryRow, #column-titles {
         width: 100%;
         height: 1;
         align-horizontal: center;
         layout: horizontal;
+        color: $text;
+    }
+
+    #categories {
+        overflow-y: scroll;
+    }
+
+    #column-titles {
+        padding-right: 1; # to account for scrollbar
+        color: $text-secondary;
+        background: $secondary-muted;
+
+        # to align with bubbles
+        .category-table--col-balance {
+            padding-right: 1;
+        }
     }
 
     CategoryGroupHeader {
@@ -140,8 +161,11 @@ CategoryTable {
         }
     }
 
-    CategoryRow:odd {
+    CategoryRow {
         background: $background-lighten-1;
+    }
+    CategoryRow:odd {
+        background: $background-lighten-2;
     }
 
     CategoryRow:focus, CategoryRow.editing {
@@ -160,7 +184,6 @@ CategoryTable {
     .category-table--col-name {
         width: 40;
         text-align: left;
-        color: $text;
     }
 
     .category-table--col-assigned,

@@ -6,7 +6,7 @@ import beancount.core.amount as amt
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.reactive import reactive
-from textual.widgets import Footer, Header
+from textual.widgets import Footer, Header, Static
 
 from beanzero.budget import Budget, BudgetSpec, Month
 from beanzero.budget.budget import MonthlyTotals
@@ -79,6 +79,7 @@ class BeanZeroApp(App):
     def compose(self) -> ComposeResult:
         yield Header()
         yield TopBar()
+        yield Static(id="spacer")
         yield CategoryTable()
         yield Footer()
 
