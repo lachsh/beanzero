@@ -1,0 +1,20 @@
+{
+  "assigned": {
+    "2024-12": {
+      "held": "100.00",
+      "categories": {
+        "rent": "200.00",
+        "eating-out": "100.00",
+        "utilities": "200.00"
+      }
+    },
+    "2025-01": {
+      "held": "0",
+      "categories": {
+        "investments": "200.00",
+        "car": "500.00",
+        "hobbies": "33.00"
+      }
+    }
+  }
+}

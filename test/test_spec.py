@@ -1,11 +1,9 @@
-import os
 from decimal import Decimal
-from pathlib import Path
 
 import beancount.core.amount as amt
 import pytest
 
-from beanzero.budget.spec import BudgetSpec, Month
+from beanzero.budget.spec import Month
 
 
 class TestMonth:
@@ -55,17 +53,6 @@ class TestMonth:
     def test_month_iso_roundtrip(self):
         m = Month(12, 1999)
         assert m.from_string(m.as_iso()) == m
-
-
-@pytest.fixture
-def spec(request, data_dir):
-    filename = request.node.get_closest_marker("spec_file").args[0]
-    cwd = os.getcwd()
-    os.chdir(data_dir)
-    with Path(filename).open("r") as spec_f:
-        spec = BudgetSpec.load(spec_f)
-    os.chdir(cwd)
-    return spec
 
 
 @pytest.mark.spec_file("sample-budget.yml")

@@ -19,6 +19,8 @@ class AssignedAmounts:
     held: amt.Amount = field()
     categories: defaultdict[CategoryKey, amt.Amount]
 
+    # TODO get a `spec` object and ensure all categories always exist?
+
     @held.validator  # type: ignore
     def validate_held(self, attr, held):
         assert held.number >= 0, "Can't have negative held balance"
@@ -53,6 +55,7 @@ class BudgetStore:
                 del self.assigned[months]
 
     def save(self, path: Path, zero_val: amt.Amount):
+        # TODO sort on save & test roundtrips
         self.prune()
         data = get_store_converter(zero_val).unstructure(self)
         tempfile = path.parent / f"{path.name}.write"
