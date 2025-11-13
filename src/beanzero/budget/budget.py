@@ -50,6 +50,44 @@ class BudgetTransaction:
     def month(self) -> Month:
         return Month.from_datetime(self.date)
 
+    @classmethod
+    def from_beancount_tx(
+        cls, spec: BudgetSpec, tx: beandata.Transaction
+    ) -> BudgetTransaction | None:
+        # Scan through postings for overall budget flow
+        flow = spec.zero
+        budget_accounts = set()
+        for posting in tx.postings:
+            if spec.is_budget_acccount(posting.account):
+                if posting.units is None:
+                    raise ValueError("Null posting")
+                budget_accounts.add(posting.account)
+                flow = amt.add(flow, posting.units)
+
+        # If there's no net budget inflow or outflow, then this transaction isn't
+        # relevant to the budget
+        if flow == spec.zero:
+            return None
+
+        # If there's flow, then calculate any spending
+        spending = defaultdict(lambda: spec.zero)
+        for posting in tx.postings:
+            if cat := spec.get_account_category(posting.account):
+                if cat in budget_accounts:
+                    raise ValueError(
+                        f"Account {cat} cannot be budget account and budget category"
+                    )
+                if posting.units is None:
+                    raise ValueError("Null posting")
+
+                spending[cat] = amt.sub(spending[cat], posting.units)
+
+        btx = BudgetTransaction(tx.date, flow, spending)
+        if btx.funding < spec.zero:
+            raise ValueError(f"Negative funding for transaction {tx}")
+
+        return btx
+
 
 @define(frozen=True)
 class MonthlyTotals:
@@ -198,7 +236,7 @@ class Budget:
 
         for directive in directives:
             if isinstance(directive, beandata.Transaction):
-                if tx := self.convert_transaction(directive):
+                if tx := BudgetTransaction.from_beancount_tx(self.spec, directive):
                     self.monthly_transactions[tx.month].append(tx)
 
         # Load our budget data store
@@ -223,41 +261,6 @@ class Budget:
         # Calculate monthly totals from transaction and budgeting data
         self.monthly_totals: dict[Month, MonthlyTotals] = dict()
         self.update_monthly_totals()
-
-    def convert_transaction(self, tx: beandata.Transaction) -> BudgetTransaction | None:
-        # Scan through postings for overall budget flow
-        flow = self.spec.zero
-        budget_accounts = set()
-        for posting in tx.postings:
-            if self.spec.is_budget_acccount(posting.account):
-                if posting.units is None:
-                    raise ValueError("Null posting")
-                budget_accounts.add(posting.account)
-                flow = amt.add(flow, posting.units)
-
-        # If there's no net budget inflow or outflow, then this transaction isn't
-        # relevant to the budget
-        if flow == self.spec.zero:
-            return None
-
-        # If there's flow, then calculate any spending
-        spending = defaultdict(lambda: self.spec.zero)
-        for posting in tx.postings:
-            if cat := self.spec.get_account_category(posting.account):
-                if cat in budget_accounts:
-                    raise ValueError(
-                        f"Account {cat} cannot be budget account and budget category"
-                    )
-                if posting.units is None:
-                    raise ValueError("Null posting")
-
-                spending[cat] = amt.sub(spending[cat], posting.units)
-
-        btx = BudgetTransaction(tx.date, flow, spending)
-        if btx.funding < self.spec.zero:
-            raise ValueError(f"Negative funding for transaction {tx}")
-
-        return btx
 
     @property
     def ledger_start_month(self):
