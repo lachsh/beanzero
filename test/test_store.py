@@ -32,6 +32,8 @@ class TestBudgetStore:
     def test_adds_good_defaults(self, store):
         assert store.assigned[Month(1, 1999)].held == ZERO
         assert dict(store.assigned[Month(1, 1999)].categories) == dict()
+        store.assigned[Month(1, 1999)].categories["test"] = AUD("50.00")
+        assert store.assigned[Month(1, 1999)].categories["test"] == AUD("50.00")
         assert store.assigned[Month(1, 1999)].categories["non-existent"] == ZERO
 
     def test_prunes_zero_values(self, store):
