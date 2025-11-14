@@ -97,8 +97,8 @@ Calendar {
 }
 
 #spacer {
-    hatch: "⠢" $secondary 50%;
-    background: $background;
+    hatch: "▂" $secondary 50%;
+    background: $background-darken-1;
 }
 
 CategoryTable {
