@@ -79,6 +79,28 @@ class Amount(Widget):
             return ""
 
 
+class EditableRow(Widget):
+    pass  # TODO extract duplicate logic from HeldRow and CategoryRow
+
+
+class HeldRow(Widget):
+    def __init__(self, **kwargs):
+        self.can_focus = True
+        super().__init__(**kwargs)
+
+    def compose(self) -> ComposeResult:
+        yield Static(
+            _("Held for next month"), classes="category-table--held-description"
+        )
+        input = Input(classes="category-table--held-assigned", select_on_focus=False)
+        input.styles.display = "none"
+        yield input
+        yield Static(
+            self.app.spec.format_currency(self.app.spec.zero),
+            classes="category-table--held-assigned zero",
+        )
+
+
 class CategoryRow(Widget):
     app: BeanZeroAppInterface
     name: reactive[str] = reactive("", recompose=True)
@@ -260,6 +282,7 @@ class CategoryTable(Widget):
     app: BeanZeroAppInterface
 
     def compose(self) -> ComposeResult:
+        yield HeldRow()
         with Horizontal(id="column-titles"):
             yield Static(_("Name"), classes="category-table--col-name")
             yield Static(_("Assigned"), classes="category-table--col-assigned")

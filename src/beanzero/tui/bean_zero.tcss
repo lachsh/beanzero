@@ -97,8 +97,8 @@ Calendar {
 }
 
 #spacer {
-    # hatch: "⠢" $secondary;
-    hatch: "▂" $secondary 50%;
+    hatch: "⠢" $secondary 50%;
+    background: $background;
 }
 
 CategoryTable {
@@ -124,7 +124,7 @@ CategoryTable {
         }
     }
 
-    CategoryGroupHeader, CategoryRow, #column-titles {
+    CategoryGroupHeader, CategoryRow, HeldRow, #column-titles {
         width: 100%;
         height: 1;
         align-horizontal: center;
@@ -137,7 +137,7 @@ CategoryTable {
     }
 
     #column-titles {
-        padding-right: 1; # to account for scrollbar
+        padding-right: 2; # to account for scrollbar
         color: $text-secondary;
         background: $secondary-muted;
 
@@ -161,6 +161,10 @@ CategoryTable {
         }
     }
 
+    HeldRow {
+        background: $background-lighten-1;
+        margin-bottom: 1;
+    }
     CategoryRow {
         background: $background-lighten-1;
     }
@@ -168,7 +172,7 @@ CategoryTable {
         background: $background-lighten-2;
     }
 
-    CategoryRow:focus, CategoryRow.editing {
+    CategoryRow:focus, CategoryRow.editing, HeldRow:focus, HeldRow.editing {
         background: $accent-darken-3;
     }
 
@@ -188,7 +192,8 @@ CategoryTable {
 
     .category-table--col-assigned,
     .category-table--col-spending,
-    .category-table--col-balance {
+    .category-table--col-balance,
+    .category-table--held-assigned {
         width: 16;
         text-align: right;
         align-horizontal: right;
@@ -198,5 +203,25 @@ CategoryTable {
     }
     .category-table--col-balance {
         width: 18;
+    }
+
+    .category-table--held-assigned {
+        margin-right: 2; # scrollbar + bubble
+        margin-left: 2;
+    }
+
+    .category-table--held-description {
+        width: 72;
+        text-align: left;
+    }
+
+    HeldRow Static.category-table--held-assigned {
+        background: $background-darken-1;
+        padding-right: 1;
+        border-left: outer $accent;
+        color: $text;
+        &.zero {
+            color: $text-muted;
+        }
     }
 }
