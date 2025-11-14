@@ -121,13 +121,13 @@ class HeldRow(Widget):
         input = Input(classes="category-table--held-assigned", select_on_focus=False)
         input.styles.display = "none"
         yield input
-        yield Static(
+        static = Static(
             self.app.spec.format_currency(self.assigned or self.app.spec.zero),
-            classes="category-table--held-assigned"
-            + (
-                " zero" if self.assigned and self.assigned == self.app.spec.zero else ""
-            ),
+            classes="category-table--held-assigned",
         )
+        if self.assigned is None or self.assigned == self.app.spec.zero:
+            static.add_class("zero")
+        yield static
 
     def on_mount(self):
         self.watch(self.app, "current_totals", self.app_watch_current_totals)
