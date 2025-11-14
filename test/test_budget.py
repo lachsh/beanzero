@@ -81,6 +81,18 @@ class TestTransactionConversion:
         btx = BudgetTransaction.from_beancount_tx(spec, tx)
         assert btx is None
 
+    def test_transfer_and_expense(self, spec, tx):
+        bd.create_simple_posting(tx, "Assets:Checking", b.D("-700.00"), "AUD")
+        bd.create_simple_posting(tx, "Assets:Savings", b.D("500.00"), "AUD")
+        bd.create_simple_posting(tx, "Assets:Investments", b.D("200.00"), "AUD")
+        btx = BudgetTransaction.from_beancount_tx(spec, tx)
+        assert btx.flow == AUD("-200.00")
+        assert btx.funding == ZERO
+        assert btx.total_spending == AUD("-200.00")
+        assert dict(btx.spending) == {
+            "investments": AUD("-200.00"),
+        }
+
     def test_simple_income(self, spec, tx):
         bd.create_simple_posting(tx, "Assets:Checking", b.D("200.00"), "AUD")
         bd.create_simple_posting(tx, "Income:Salary", b.D("-200.00"), "AUD")
