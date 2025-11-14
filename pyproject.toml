@@ -23,3 +23,9 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = ["ipython>=8.37.0", "pytest>=9.0.0", "ruff>=0.12.9", "textual-dev>=1.7.0"]
+
+[tool.pytest]
+markers = [
+    "spec_file: get Budget and BudgetSpec fixtures to load from this file in ./test/data",
+    "store_file: get BudgetStore fixture to load from this file in ./test/data",
+]
