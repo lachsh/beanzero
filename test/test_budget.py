@@ -1,10 +1,11 @@
 import datetime
+from collections import defaultdict
 
 import beancount as b
 import beancount.core.data as bd
 import pytest
 
-from beanzero.budget.budget import BudgetTransaction
+from beanzero.budget.budget import BudgetTransaction, MonthlyTotals
 
 from .conftest import AUD, ZERO
 
@@ -21,6 +22,10 @@ def tx(*postings) -> bd.Transaction:
         links=frozenset(),
         postings=[],
     )
+
+
+def dict_clear_zeroes(dd):
+    return {k: v for k, v in dd.items() if v != ZERO}
 
 
 @pytest.mark.spec_file("sample-budget.yml")
@@ -122,3 +127,114 @@ class TestTransactionConversion:
         # TODO probably want to implement a warnings system
         with pytest.raises(ValueError):
             btx = BudgetTransaction.from_beancount_tx(spec, tx)
+
+
+@pytest.mark.spec_file("sample-budget.yml")
+class TestMonthlyTotals:
+    # TODO test group subtotals
+
+    def test_new_month(self, spec):
+        totals = MonthlyTotals(
+            spec,
+            previous_tba=ZERO,
+            previous_holding=ZERO,
+            previous_overspending=ZERO,
+            funding=AUD("1000.00"),
+            holding=AUD("55.33"),
+            previous_carryover=defaultdict(lambda: ZERO),
+            spending=defaultdict(
+                lambda: ZERO, {"rent": AUD("-200.00"), "hobbies": AUD("-77.45")}
+            ),
+            assigning=defaultdict(
+                lambda: ZERO,
+                {
+                    "rent": AUD("250.00"),
+                    "hobbies": AUD("150.00"),
+                    "utilities": AUD("300.00"),
+                },
+            ),
+        )
+        assert totals.total_spending == AUD("-277.45")
+        assert totals.total_assigning == AUD("700.00")
+        assert dict_clear_zeroes(totals.category_balances) == {
+            "rent": AUD("50.00"),
+            "hobbies": AUD("72.55"),
+            "utilities": AUD("300.00"),
+        }
+        assert dict_clear_zeroes(totals.carryover_balances) == dict_clear_zeroes(
+            totals.category_balances
+        )
+        assert totals.overspending == ZERO
+        assert totals.to_be_assigned == AUD("244.67")
+
+    def test_overspending_month(self, spec):
+        totals = MonthlyTotals(
+            spec,
+            previous_tba=ZERO,
+            previous_holding=ZERO,
+            previous_overspending=ZERO,
+            funding=AUD("1000.00"),
+            holding=AUD("55.33"),
+            previous_carryover=defaultdict(lambda: ZERO),
+            spending=defaultdict(
+                lambda: ZERO, {"rent": AUD("-200.00"), "hobbies": AUD("-77.45")}
+            ),
+            assigning=defaultdict(
+                lambda: ZERO,
+                {
+                    "rent": AUD("150.00"),
+                    "hobbies": AUD("150.00"),
+                    "utilities": AUD("300.00"),
+                },
+            ),
+        )
+        assert totals.total_spending == AUD("-277.45")
+        assert totals.total_assigning == AUD("600.00")
+        assert dict_clear_zeroes(totals.category_balances) == {
+            "rent": AUD("-50.00"),
+            "hobbies": AUD("72.55"),
+            "utilities": AUD("300.00"),
+        }
+        assert dict_clear_zeroes(totals.carryover_balances) == {
+            # "rent": AUD("0.00"),
+            "hobbies": AUD("72.55"),
+            "utilities": AUD("300.00"),
+        }
+        assert totals.overspending == AUD("-50.00")
+        assert totals.to_be_assigned == AUD("344.67")
+
+    def test_carry_forward_balances(self, spec):
+        totals = MonthlyTotals(
+            spec,
+            previous_tba=AUD("444.44"),
+            previous_holding=AUD("22.00"),
+            previous_overspending=AUD("-299.99"),
+            funding=AUD("1000.00"),
+            holding=AUD("55.33"),
+            previous_carryover=defaultdict(
+                lambda: ZERO, {"utilities": AUD("20.00"), "rent": AUD("45.00")}
+            ),
+            spending=defaultdict(
+                lambda: ZERO, {"rent": AUD("-200.00"), "hobbies": AUD("-77.45")}
+            ),
+            assigning=defaultdict(
+                lambda: ZERO,
+                {
+                    "rent": AUD("250.00"),
+                    "hobbies": AUD("150.00"),
+                    "utilities": AUD("300.00"),
+                },
+            ),
+        )
+        assert totals.total_spending == AUD("-277.45")
+        assert totals.total_assigning == AUD("700.00")
+        assert dict_clear_zeroes(totals.category_balances) == {
+            "rent": AUD("95.00"),
+            "hobbies": AUD("72.55"),
+            "utilities": AUD("320.00"),
+        }
+        assert dict_clear_zeroes(totals.carryover_balances) == dict_clear_zeroes(
+            totals.category_balances
+        )
+        assert totals.overspending == ZERO
+        assert totals.to_be_assigned == AUD("411.12")

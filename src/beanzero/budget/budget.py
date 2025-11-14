@@ -109,7 +109,7 @@ class MonthlyTotals:
     holding: amt.Amount
 
     # per-category amounts
-    carryover: defaultdict[CategoryKey, amt.Amount]
+    previous_carryover: defaultdict[CategoryKey, amt.Amount]
     spending: defaultdict[CategoryKey, amt.Amount]
     assigning: defaultdict[CategoryKey, amt.Amount]
 
@@ -170,7 +170,7 @@ class MonthlyTotals:
     def category_balances(self) -> defaultdict[CategoryKey, amt.Amount]:
         balances = defaultdict(lambda: self.spec.zero)
         for key in self.spec.all_category_keys:
-            balances[key] = self.carryover[key]
+            balances[key] = self.previous_carryover[key]
             balances[key] = amt.add(balances[key], self.spending[key])
             balances[key] = amt.add(balances[key], self.assigning[key])
         return balances
