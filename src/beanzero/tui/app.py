@@ -76,6 +76,13 @@ class BeanZeroApp(App):
         self.mutate_reactive(BeanZeroApp.current_totals)
         self.mutate_reactive(BeanZeroApp.current_month)
 
+    def action_set_held(self, new_amount: amt.Amount):
+        self.budget.update_held_amount(self.current_month, new_amount)
+        self.current_totals = self.budget.monthly_totals[self.current_month]
+        # just make sure we refresh everything
+        self.mutate_reactive(BeanZeroApp.current_totals)
+        self.mutate_reactive(BeanZeroApp.current_month)
+
     def compose(self) -> ComposeResult:
         yield Header()
         yield TopBar()

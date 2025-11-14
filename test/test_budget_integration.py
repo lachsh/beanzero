@@ -49,10 +49,19 @@ class TestBudgetIntegration:
         budget.update_assigned_amount(
             Month(12, 2024), "investments", AUD("100"), save=False
         )
+        assert budget.monthly_totals[Month(12, 2024)].category_balances[
+            "investments"
+        ] == AUD("100")
         assert budget.monthly_totals[Month(1, 2025)].category_balances[
             "investments"
         ] == AUD("100")
-
         assert budget.monthly_totals[Month(2, 2025)].category_balances[
             "investments"
         ] == AUD("100")
+
+    def test_held_changes_propagate(self, budget):
+        budget.update_held_amount(Month(1, 2025), AUD("99.95"), save=False)
+        assert budget.monthly_totals[Month(1, 2025)].holding == AUD("99.95")
+        assert budget.monthly_totals[Month(1, 2025)].to_be_assigned == AUD("160.27")
+        assert budget.monthly_totals[Month(2, 2025)].holding == ZERO
+        assert budget.monthly_totals[Month(2, 2025)].to_be_assigned == AUD("240.02")

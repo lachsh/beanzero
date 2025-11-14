@@ -313,3 +313,9 @@ class Budget:
         self.update_monthly_totals(from_month=month)
         if save:
             self._store.save(self.spec.storage, self.spec.zero)
+
+    def update_held_amount(self, month: Month, amount: amt.Amount, save: bool = True):
+        self._store.assigned[month].held = amount
+        self.update_monthly_totals(from_month=month)
+        if save:
+            self._store.save(self.spec.storage, self.spec.zero)

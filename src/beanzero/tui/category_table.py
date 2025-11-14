@@ -79,11 +79,37 @@ class Amount(Widget):
             return ""
 
 
-class EditableRow(Widget):
-    pass  # TODO extract duplicate logic from HeldRow and CategoryRow
-
-
 class HeldRow(Widget):
+    assigned: reactive[amt.Amount | None] = reactive(None, recompose=True)
+    editing_assigned: reactive[bool] = reactive(False, init=False)
+
+    BINDINGS = [
+        Binding(
+            "enter",
+            "edit_assigned()",
+            _("Assign"),
+            tooltip=_("Edit amount held for next month."),
+        ),
+        Binding(
+            "=",
+            "edit_assigned('=')",
+            _("Set assigned"),
+            tooltip=_("Set amount held for next month."),
+        ),
+        Binding(
+            "+",
+            "edit_assigned('+')",
+            _("Assign more"),
+            tooltip=_("Increase amount held for next month."),
+        ),
+        Binding(
+            "-",
+            "edit_assigned('-')",
+            _("Assign less"),
+            tooltip=_("Decrease amount held for next month."),
+        ),
+    ]
+
     def __init__(self, **kwargs):
         self.can_focus = True
         super().__init__(**kwargs)
@@ -96,9 +122,86 @@ class HeldRow(Widget):
         input.styles.display = "none"
         yield input
         yield Static(
-            self.app.spec.format_currency(self.app.spec.zero),
-            classes="category-table--held-assigned zero",
+            self.app.spec.format_currency(self.assigned or self.app.spec.zero),
+            classes="category-table--held-assigned"
+            + (
+                " zero" if self.assigned and self.assigned == self.app.spec.zero else ""
+            ),
         )
+
+    def on_mount(self):
+        self.watch(self.app, "current_totals", self.app_watch_current_totals)
+
+    def app_watch_current_totals(self, new: MonthlyTotals | None):
+        if new is None:
+            return
+        else:
+            self.assigned = new.holding
+
+    async def watch_editing_assigned(self, on):
+        #  if we're enabling editing, then focus the input box
+        if on:
+            self.query_one(
+                "Input.category-table--held-assigned"
+            ).styles.display = "block"
+            self.query_one(
+                "Static.category-table--held-assigned"
+            ).styles.display = "none"
+            self.add_class("editing")
+            self.query_one(Input).focus()
+
+        # otherwise extract the value and return to display
+        else:
+            self.query_one(
+                "Input.category-table--held-assigned"
+            ).styles.display = "none"
+            self.query_one(
+                "Static.category-table--held-assigned"
+            ).styles.display = "block"
+
+            new_input = self.query_one(Input).value
+            if new_input != "":
+                try:
+                    if new_input.startswith("+") or new_input.startswith("-"):
+                        new_value = self.app.current_totals.holding.number + Decimal(
+                            new_input
+                        )
+                    elif new_input.startswith("="):
+                        new_value = Decimal(new_input[1:])
+                    else:
+                        new_value = Decimal(new_input)
+                    new_assigned = amt.Amount(new_value, self.app.spec.currency)
+
+                    if not self.app.spec.is_amount_suitable_precision(new_assigned):
+                        self.app.notify(
+                            f"Amount {new_assigned} is too high precision for this budget",
+                            title="Assignment unchanged",
+                            severity="warning",
+                        )
+                    else:
+                        self.app.action_set_held(new_assigned)
+
+                except InvalidOperation:
+                    self.app.notify(
+                        f"Couldn't parse '{new_input}'",
+                        title="Assignment unchanged",
+                        severity="warning",
+                    )
+
+            await self.recompose()
+            self.focus()
+            self.remove_class("editing")
+
+    def on_descendant_blur(self, event):
+        self.editing_assigned = False
+
+    def on_input_submitted(self, event):
+        self.editing_assigned = False
+
+    def action_edit_assigned(self, prepend: str | None = None):
+        if prepend is not None:
+            self.query_one(Input).value = prepend
+        self.editing_assigned = True
 
 
 class CategoryRow(Widget):
