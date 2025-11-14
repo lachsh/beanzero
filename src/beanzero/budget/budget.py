@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import functools
 import operator
+import os
 from collections import defaultdict
 from decimal import Decimal
 from pathlib import Path
@@ -225,8 +226,11 @@ class Budget:
 
     def __init__(self, spec_path: Path | str):
         spec_path = Path(spec_path)
-        with spec_path.open("r") as spec_f:
+        old_cwd = os.getcwd()
+        os.chdir(spec_path.parent)
+        with spec_path.relative_to(spec_path.parent).open("r") as spec_f:
             self.spec = BudgetSpec.load(spec_f)
+        os.chdir(old_cwd)
 
         # Load the beancount data, and convert and categorise transactions by month
         directives, errors, options = beancount.loader.load_file(self.spec.ledger)
@@ -303,8 +307,9 @@ class Budget:
             month += 1
 
     def update_assigned_amount(
-        self, month: Month, category: CategoryKey, amount: amt.Amount
+        self, month: Month, category: CategoryKey, amount: amt.Amount, save: bool = True
     ):
         self._store.assigned[month].categories[category] = amount
         self.update_monthly_totals(from_month=month)
-        self._store.save(self.spec.storage, self.spec.zero)
+        if save:
+            self._store.save(self.spec.storage, self.spec.zero)

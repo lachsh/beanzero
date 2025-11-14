@@ -1,19 +1,29 @@
 {
   "assigned": {
     "2024-12": {
-      "held": "100.00",
+      "held": "100",
       "categories": {
-        "rent": "200.00",
-        "eating-out": "100.00",
-        "utilities": "200.00"
+        "rent": "200",
+        "eating-out": "100",
+        "utilities": "100"
       }
     },
     "2025-01": {
       "held": "0",
       "categories": {
-        "investments": "200.00",
-        "car": "500.00",
-        "hobbies": "33.00"
+        "investments": "200",
+        "car": "500",
+        "hobbies": "33.00",
+        "rent": "650",
+        "rainy-day-fund": "456.78"
+      }
+    },
+    "2025-02": {
+      "held": "0",
+      "categories": {
+        "rainy-day-fund": "-55.20",
+        "hobbies": "30.20",
+        "car": "25.20"
       }
     }
   }

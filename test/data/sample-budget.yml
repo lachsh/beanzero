@@ -1,7 +1,7 @@
 name: "Personal Budget"
 theme: nord
 ledger: ./sample-budget.bean
-storage: ./budget.zbb.json
+storage: ./sample-budget.json
 currency: "AUD"
 locale: en_AU
 accounts:

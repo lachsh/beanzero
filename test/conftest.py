@@ -4,6 +4,7 @@ from pathlib import Path
 import beancount as b
 import pytest
 
+from beanzero.budget.budget import Budget
 from beanzero.budget.spec import BudgetSpec
 from beanzero.budget.store import BudgetStore
 
@@ -30,6 +31,14 @@ def spec(request, data_dir):
         spec = BudgetSpec.load(spec_f)
     os.chdir(cwd)
     return spec
+
+
+@pytest.fixture
+def budget(request, data_dir):
+    filename = request.node.get_closest_marker("spec_file").args[0]
+    budget_path = data_dir / filename
+    budget = Budget(budget_path)
+    return budget
 
 
 @pytest.fixture

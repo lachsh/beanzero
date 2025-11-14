@@ -20,7 +20,11 @@ class TestAssignedAmounts:
 @pytest.mark.store_file("sample-budget.json")
 class TestBudgetStore:
     def test_loaded_months(self, store):
-        assert list(store.assigned.keys()) == [Month(12, 2024), Month(1, 2025)]
+        assert list(store.assigned.keys()) == [
+            Month(12, 2024),
+            Month(1, 2025),
+            Month(2, 2025),
+        ]
 
     def test_loaded_values(self, store):
         values = store.assigned[Month(1, 2025)]
