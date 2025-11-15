@@ -37,7 +37,7 @@ class TestTransactionConversion:
         assert btx.flow == AUD("-200.00")
         assert btx.funding == ZERO
         assert btx.total_spending == AUD("-200.00")
-        assert dict(btx.spending) == {"rent": AUD("-200.00")}
+        assert dict_clear_zeroes(btx.spending) == {"rent": AUD("-200.00")}
 
     def test_split_expense(self, spec, tx):
         bd.create_simple_posting(tx, "Expenses:Rent", b.D("120.00"), "AUD")
@@ -47,7 +47,7 @@ class TestTransactionConversion:
         assert btx.flow == AUD("-200.00")
         assert btx.funding == ZERO
         assert btx.total_spending == AUD("-200.00")
-        assert dict(btx.spending) == {
+        assert dict_clear_zeroes(btx.spending) == {
             "rent": AUD("-120.00"),
             "utilities": AUD("-80.00"),
         }
@@ -59,7 +59,7 @@ class TestTransactionConversion:
         assert btx.flow == AUD("200.00")
         assert btx.funding == ZERO
         assert btx.total_spending == AUD("200.00")
-        assert dict(btx.spending) == {"rent": AUD("200.00")}
+        assert dict_clear_zeroes(btx.spending) == {"rent": AUD("200.00")}
 
     def test_split_expense_with_negative(self, spec, tx):
         # TODO is this the functionality we actually want?
@@ -70,7 +70,7 @@ class TestTransactionConversion:
         assert btx.flow == AUD("-200.00")
         assert btx.funding == AUD("50.00")
         assert btx.total_spending == AUD("-250.00")
-        assert dict(btx.spending) == {"utilities": AUD("-250.00")}
+        assert dict_clear_zeroes(btx.spending) == {"utilities": AUD("-250.00")}
 
     def test_on_budget_transfer_is_skipped(self, spec, tx):
         bd.create_simple_posting(tx, "Assets:Savings", b.D("200.00"), "AUD")
@@ -94,7 +94,7 @@ class TestTransactionConversion:
         assert btx.flow == AUD("-200.00")
         assert btx.funding == ZERO
         assert btx.total_spending == AUD("-200.00")
-        assert dict(btx.spending) == {
+        assert dict_clear_zeroes(btx.spending) == {
             "investments": AUD("-200.00"),
         }
 
@@ -106,7 +106,7 @@ class TestTransactionConversion:
         assert btx.flow == AUD("200.00")
         assert btx.funding == AUD("200.00")
         assert btx.total_spending == ZERO
-        assert dict(btx.spending) == {}
+        assert dict_clear_zeroes(btx.spending) == {}
 
     def test_split_income(self, spec, tx):
         bd.create_simple_posting(tx, "Assets:Checking", b.D("150.00"), "AUD")
@@ -118,7 +118,7 @@ class TestTransactionConversion:
         assert btx.flow == AUD("180.00")
         assert btx.funding == AUD("180.00")
         assert btx.total_spending == ZERO
-        assert dict(btx.spending) == {}
+        assert dict_clear_zeroes(btx.spending) == {}
 
     def test_negative_income(self, spec, tx):
         bd.create_simple_posting(tx, "Assets:Checking", b.D("-200.00"), "AUD")

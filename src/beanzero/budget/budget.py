@@ -17,6 +17,7 @@ from beanzero.budget.spec import (
     BudgetSpec,
     CategoryGroup,
     CategoryKey,
+    CategoryMap,
     Month,
 )
 from beanzero.budget.store import BudgetStore, get_store_converter
@@ -33,7 +34,7 @@ class BudgetTransaction:
 
     date: datetime.date
     flow: amt.Amount
-    spending: defaultdict[CategoryKey, amt.Amount]
+    spending: CategoryMap
 
     @functools.cached_property
     def total_spending(self) -> amt.Amount:
@@ -71,7 +72,7 @@ class BudgetTransaction:
             return None
 
         # If there's flow, then calculate any spending
-        spending = defaultdict(lambda: spec.zero)
+        spending = spec.category_map()
         for posting in tx.postings:
             if cat := spec.get_account_category(posting.account):
                 if cat in budget_accounts:
@@ -110,9 +111,9 @@ class MonthlyTotals:
     holding: amt.Amount
 
     # per-category amounts
-    previous_carryover: defaultdict[CategoryKey, amt.Amount]
-    spending: defaultdict[CategoryKey, amt.Amount]
-    assigning: defaultdict[CategoryKey, amt.Amount]
+    previous_carryover: CategoryMap
+    spending: CategoryMap
+    assigning: CategoryMap
 
     @staticmethod
     def aggregate_funding(spec: BudgetSpec, txs: list[BudgetTransaction]):
@@ -122,7 +123,7 @@ class MonthlyTotals:
 
     @staticmethod
     def aggregate_spending(spec: BudgetSpec, txs: list[BudgetTransaction]):
-        spending = defaultdict(lambda: spec.zero)
+        spending = spec.category_map()
         for tx in txs:
             for k, v in tx.spending.items():
                 spending[k] = amt.add(spending[k], v)
@@ -134,14 +135,14 @@ class MonthlyTotals:
         spec: BudgetSpec,
         txs: list[BudgetTransaction],
         holding: amt.Amount,
-        assigning: defaultdict[CategoryKey, amt.Amount],
+        assigning: CategoryMap,
         prev_month: MonthlyTotals | None = None,
     ) -> MonthlyTotals:
         if prev_month is None:
             previous_tba = spec.zero
             previous_holding = spec.zero
             previous_overspending = spec.zero
-            carryover = defaultdict(lambda: spec.zero)
+            carryover = spec.category_map()
         else:
             previous_tba = prev_month.to_be_assigned
             previous_holding = prev_month.holding
@@ -168,8 +169,8 @@ class MonthlyTotals:
         return functools.reduce(amt.add, self.assigning.values(), self.spec.zero)
 
     @property
-    def category_balances(self) -> defaultdict[CategoryKey, amt.Amount]:
-        balances = defaultdict(lambda: self.spec.zero)
+    def category_balances(self) -> CategoryMap:
+        balances = self.spec.category_map()
         for key in self.spec.all_category_keys:
             balances[key] = self.previous_carryover[key]
             balances[key] = amt.add(balances[key], self.spending[key])
@@ -177,7 +178,7 @@ class MonthlyTotals:
         return balances
 
     @property
-    def carryover_balances(self) -> defaultdict[CategoryKey, amt.Amount]:
+    def carryover_balances(self) -> CategoryMap:
         balances = self.category_balances.copy()
         for k, v in balances.items():
             if v.number and v.number < 0:
@@ -249,9 +250,9 @@ class Budget:
                 # we want to keep the store private and expose methods on Budget to ensure
                 # we can re-run validation and refresh all the MonthlyTotals and so on as
                 # required
-                self._store = BudgetStore.load(storage_f, self.spec.zero)
+                self._store = BudgetStore.load(storage_f, self.spec)
         else:
-            self._store = get_store_converter(self.spec.zero).structure(
+            self._store = get_store_converter(self.spec).structure(
                 dict(assigned=dict()), BudgetStore
             )
 

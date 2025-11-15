@@ -109,7 +109,7 @@ def to_account_collection(val: str | list[str] | None, _) -> BeanAccountCollecti
         return BeanAccountCollection(val)
 
 
-CategoryKey = str
+type CategoryKey = str
 
 
 @define(frozen=True)
@@ -130,6 +130,30 @@ class CategoryGroup:
 
     name: str
     categories: list[Category]
+
+
+class CategoryMap(dict):
+    def __init__(self, spec: BudgetSpec):
+        self._spec = spec
+        return super().__init__({k: spec.zero for k in self._spec.all_category_keys})
+
+    def __getitem__(self, key):
+        if key not in self._spec.all_category_keys:
+            raise KeyError(f"Illegal category key {key}")
+        else:
+            return super().__getitem__(key)
+
+    def __setitem__(self, key, value):
+        if key not in self._spec.all_category_keys:
+            raise KeyError(f"Illegal category key {key}")
+        elif not isinstance(value, amt.Amount):
+            raise ValueError(
+                f"Category values must be amt.Amount, not {value.__class__}"
+            )
+        elif value.currency != self._spec.currency:
+            raise ValueError(f"Trying to set illegal currency {value.currency}")
+        else:
+            super().__setitem__(key, value)
 
 
 @define(frozen=True)
@@ -177,6 +201,9 @@ class BudgetSpec:
     @property
     def all_category_keys(self):
         return [c.key for g in self.groups for c in g.categories]
+
+    def category_map(self) -> CategoryMap:
+        return CategoryMap(self)
 
     # @functools.cache
     def is_budget_acccount(self, beancount_account: str) -> bool:

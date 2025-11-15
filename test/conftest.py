@@ -30,6 +30,7 @@ def spec(request, data_dir):
     with Path(filename).open("r") as spec_f:
         spec = BudgetSpec.load(spec_f)
     os.chdir(cwd)
+    print(spec.category_map())
     return spec
 
 
@@ -42,11 +43,11 @@ def budget(request, data_dir):
 
 
 @pytest.fixture
-def store(request, data_dir):
+def store(request, data_dir, spec):
     filename = request.node.get_closest_marker("store_file").args[0]
     cwd = os.getcwd()
     os.chdir(data_dir)
     with Path(filename).open("r") as spec_f:
-        store = BudgetStore.load(spec_f, ZERO)
+        store = BudgetStore.load(spec_f, spec)
     os.chdir(cwd)
     return store

@@ -1,9 +1,12 @@
 from decimal import Decimal
 
+import beancount as b
 import beancount.core.amount as amt
 import pytest
 
 from beanzero.budget.spec import Month
+
+from .conftest import AUD, ZERO
 
 
 class TestMonth:
@@ -113,3 +116,29 @@ class TestNormalBudgetSpec:
         assert (
             spec.format_currency(amt.Amount(Decimal("-1123.45"), "AUD")) == "-$1,123.45"
         )
+
+
+@pytest.mark.spec_file("sample-budget.yml")
+class TestCategoryMap:
+    def test_keys_match_categories(self, spec):
+        m = spec.category_map()
+        assert m.keys() == set(spec.all_category_keys)
+
+    def test_initialise_values_to_zero(self, spec):
+        for v in spec.category_map().values():
+            assert v == ZERO
+
+    def test_reject_bad_keys_get_and_set(self, spec):
+        with pytest.raises(KeyError):
+            spec.category_map()["not-real"]
+
+        with pytest.raises(KeyError):
+            spec.category_map()["not-real"] = AUD("20")
+
+    def test_reject_wrong_type(self, spec):
+        with pytest.raises(ValueError):
+            spec.category_map()["car"] = b.D("20")
+
+    def test_reject_bad_currency(self, spec):
+        with pytest.raises(ValueError):
+            spec.category_map()["car"] = b.Amount(b.D("20"), "EUR")
