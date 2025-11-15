@@ -137,6 +137,13 @@ class CategoryMap(dict):
         self._spec = spec
         return super().__init__({k: spec.zero for k in self._spec.all_category_keys})
 
+    @classmethod
+    def with_values(cls, spec: BudgetSpec, init_values: dict = {}):
+        d = cls(spec)
+        for k, v in init_values.items():
+            d[k] = v
+        return d
+
     def __getitem__(self, key):
         if key not in self._spec.all_category_keys:
             raise KeyError(f"Illegal category key {key}")

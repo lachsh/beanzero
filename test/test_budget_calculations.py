@@ -6,6 +6,7 @@ import beancount.core.data as bd
 import pytest
 
 from beanzero.budget.budget import BudgetTransaction, MonthlyTotals
+from beanzero.budget.spec import CategoryMap
 
 from .conftest import AUD, ZERO
 
@@ -141,12 +142,12 @@ class TestMonthlyTotals:
             previous_overspending=ZERO,
             funding=AUD("1000.00"),
             holding=AUD("55.33"),
-            previous_carryover=defaultdict(lambda: ZERO),
-            spending=defaultdict(
-                lambda: ZERO, {"rent": AUD("-200.00"), "hobbies": AUD("-77.45")}
+            previous_carryover=CategoryMap(spec),
+            spending=CategoryMap.with_values(
+                spec, {"rent": AUD("-200.00"), "hobbies": AUD("-77.45")}
             ),
-            assigning=defaultdict(
-                lambda: ZERO,
+            assigning=CategoryMap.with_values(
+                spec,
                 {
                     "rent": AUD("250.00"),
                     "hobbies": AUD("150.00"),
@@ -175,12 +176,12 @@ class TestMonthlyTotals:
             previous_overspending=ZERO,
             funding=AUD("1000.00"),
             holding=AUD("55.33"),
-            previous_carryover=defaultdict(lambda: ZERO),
-            spending=defaultdict(
-                lambda: ZERO, {"rent": AUD("-200.00"), "hobbies": AUD("-77.45")}
+            previous_carryover=CategoryMap(spec),
+            spending=CategoryMap.with_values(
+                spec, {"rent": AUD("-200.00"), "hobbies": AUD("-77.45")}
             ),
-            assigning=defaultdict(
-                lambda: ZERO,
+            assigning=CategoryMap.with_values(
+                spec,
                 {
                     "rent": AUD("150.00"),
                     "hobbies": AUD("150.00"),
@@ -211,14 +212,14 @@ class TestMonthlyTotals:
             previous_overspending=AUD("-299.99"),
             funding=AUD("1000.00"),
             holding=AUD("55.33"),
-            previous_carryover=defaultdict(
-                lambda: ZERO, {"utilities": AUD("20.00"), "rent": AUD("45.00")}
+            previous_carryover=CategoryMap.with_values(
+                spec, {"utilities": AUD("20.00"), "rent": AUD("45.00")}
             ),
-            spending=defaultdict(
-                lambda: ZERO, {"rent": AUD("-200.00"), "hobbies": AUD("-77.45")}
+            spending=CategoryMap.with_values(
+                spec, {"rent": AUD("-200.00"), "hobbies": AUD("-77.45")}
             ),
-            assigning=defaultdict(
-                lambda: ZERO,
+            assigning=CategoryMap.with_values(
+                spec,
                 {
                     "rent": AUD("250.00"),
                     "hobbies": AUD("150.00"),

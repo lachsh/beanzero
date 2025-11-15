@@ -4,7 +4,7 @@ import beancount as b
 import beancount.core.amount as amt
 import pytest
 
-from beanzero.budget.spec import Month
+from beanzero.budget.spec import CategoryMap, Month
 
 from .conftest import AUD, ZERO
 
@@ -127,6 +127,18 @@ class TestCategoryMap:
     def test_initialise_values_to_zero(self, spec):
         for v in spec.category_map().values():
             assert v == ZERO
+
+    def test_sets_initial_values(self, spec):
+        m = CategoryMap.with_values(
+            spec, {"car": AUD("200"), "investments": AUD("100")}
+        )
+        assert m["car"] == AUD("200")
+        assert m["investments"] == AUD("100")
+        assert m["hobbies"] == ZERO
+
+    def test_reject_bad_keys_on_init(self, spec):
+        with pytest.raises(KeyError):
+            CategoryMap.with_values(spec, {"car": AUD("200"), "fake": AUD("100")})
 
     def test_reject_bad_keys_get_and_set(self, spec):
         with pytest.raises(KeyError):
