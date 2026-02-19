@@ -5,7 +5,7 @@ import beancount as b
 import beancount.core.data as bd
 import pytest
 
-from beanzero.budget.budget import BudgetTransaction, MonthlyTotals
+from beanzero.budget.core import BudgetTransaction, MonthlyTotals
 from beanzero.budget.spec import CategoryMap
 
 from .conftest import AUD, ZERO

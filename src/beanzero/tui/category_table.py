@@ -12,7 +12,7 @@ from textual.widget import Widget
 from textual.widgets import DataTable, Digits, Input, Static
 
 import beanzero.budget.spec as spec
-from beanzero.budget.budget import MonthlyTotals
+from beanzero.budget.core import MonthlyTotals
 from beanzero.tui.interface import BeanZeroAppInterface
 
 _ = gettext.gettext

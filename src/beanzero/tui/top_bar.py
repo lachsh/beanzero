@@ -8,7 +8,8 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Digits, Static
 
-from beanzero.budget import Month, MonthlyTotals
+from beanzero.budget import Month
+from beanzero.budget.core import MonthlyTotals
 from beanzero.tui.interface import BeanZeroAppInterface
 
 _ = gettext.gettext

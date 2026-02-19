@@ -9,7 +9,7 @@ from textual.reactive import reactive
 from textual.widgets import Footer, Header, Static
 
 from beanzero.budget import Budget, BudgetSpec, Month
-from beanzero.budget.budget import MonthlyTotals
+from beanzero.budget.core import MonthlyTotals
 from beanzero.budget.spec import CategoryKey
 from beanzero.tui.category_table import CategoryTable
 from beanzero.tui.top_bar import TopBar
