@@ -62,7 +62,7 @@ class BudgetStore:
         self.prune()
 
         # remove zeroes from the data to write
-        write = self.copy()
+        write = self.evolve()
         for amounts in write.assigned.values():
             for category in list(amounts.categories.keys()):
                 if amounts.categories[category] == self.spec.zero:
